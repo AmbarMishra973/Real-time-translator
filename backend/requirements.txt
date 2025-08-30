@@ -1,0 +1,9 @@
+# Inside backend/requirements.txt
+fastapi
+uvicorn
+sounddevice
+numpy
+faster-whisper
+deep-translator
+edge-tts
+pydub
