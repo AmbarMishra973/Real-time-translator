@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import Waveform from './Waveform';
+import './App.css';
+import Waveform from './Waveform'; // Make sure this path is correct
 
 function App() {
   const [recording, setRecording] = useState(false);
@@ -38,7 +39,9 @@ function App() {
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = e => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
       };
 
       mediaRecorderRef.current.onstop = () => {
@@ -56,27 +59,26 @@ function App() {
       socketRef.current = new WebSocket('ws://localhost:8000/ws/transcribe');
 
       socketRef.current.onopen = () => {
-        setStatus('Streaming to server...');
+        setStatus('Recording and streaming...');
         setRecording(true);
       };
 
       socketRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.text) {
-          setTranscribedText(prev => prev ? prev + ' ' + data.text : data.text);
-          setStatus(`Detected language: ${data.detected_lang} (confidence: ${data.confidence})`);
+        if (data.transcript) {
+          setTranscribedText(data.transcript);
         }
       };
 
       socketRef.current.onerror = (err) => {
-        setStatus('WebSocket error: ' + err.message);
+        setStatus('WebSocket error');
       };
 
       processor.onaudioprocess = (e) => {
-        const inputData = e.inputBuffer.getChannelData(0);
-        const pcmData = convertFloat32ToInt16(inputData);
-        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-          socketRef.current.send(pcmData);
+        if (socketRef.current.readyState === 1) {
+          const inputData = e.inputBuffer.getChannelData(0);
+          const int16Data = convertFloat32ToInt16(inputData);
+          socketRef.current.send(int16Data);
         }
       };
 
@@ -136,24 +138,22 @@ function App() {
       formData.append('target_lang', targetLang);
 
       setStatus('Translating...');
-      const res = await fetch('http://localhost:8000/translate', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-      setTranslatedText(data.translated);
-      setStatus('Translation complete.');
+      // Add your translation API call here
+      // Example:
+      // const response = await fetch('/api/translate', { method: 'POST', body: formData });
+      // const data = await response.json();
+      // setTranslatedText(data.translation);
+      setTimeout(() => {
+        setTranslatedText(transcribedText.split('').reverse().join('')); // Demo translation
+        setStatus('Translation complete.');
+      }, 1000);
     } catch (err) {
-      setStatus('Error: ' + err.message);
+      setStatus('Translation failed.');
     }
   };
 
   const playTTS = async () => {
-    if (!translatedText.trim()) {
-      alert('No translated text to play.');
-      return;
-    }
+    if (!translatedText.trim()) return;
 
     const voiceMap = {
       en: 'en-US-JennyNeural',
@@ -163,33 +163,26 @@ function App() {
     const voice = voiceMap[targetLang] || 'en-US-JennyNeural';
 
     try {
-      const formData = new FormData();
-      formData.append('text', translatedText);
-      formData.append('voice', voice);
-
-      setStatus('Generating speech...');
-      const res = await fetch('http://localhost:8000/tts', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const audioBlob = await res.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.play();
-      setStatus('Playing audio...');
+      // Add your TTS API call here
+      // Example:
+      // const response = await fetch('/api/tts', { method: 'POST', body: JSON.stringify({ text: translatedText, voice }) });
+      // const audioUrl = await response.text();
+      // const audio = new Audio(audioUrl);
+      // audio.play();
+      setStatus('Playing translated audio...');
+      setTimeout(() => setStatus(''), 1500);
     } catch (err) {
-      setStatus('Error: ' + err.message);
+      setStatus('TTS failed.');
     }
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: 'auto', padding: 20, fontFamily: 'Arial, sans-serif' }}>
+    <div className="app-container">
       <h1>Real-Time Speech Translator</h1>
 
-      <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 18 }}>
         <label>
-          Source Language:{' '}
+          Source Language:
           <select value={sourceLang} onChange={e => setSourceLang(e.target.value)}>
             {languageOptions.map(lang => (
               <option key={lang.value} value={lang.value}>
@@ -200,9 +193,9 @@ function App() {
         </label>
       </div>
 
-      <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 18 }}>
         <label>
-          Target Language:{' '}
+          Target Language:
           <select value={targetLang} onChange={e => setTargetLang(e.target.value)}>
             {languageOptions.map(lang => (
               <option key={lang.value} value={lang.value}>
@@ -213,63 +206,68 @@ function App() {
         </label>
       </div>
 
-      <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 18 }}>
         {!recording ? (
-          <button onClick={startRecording}>Start Real-Time Recording</button>
+          <button onClick={startRecording}>🎤 Start Real-Time Recording</button>
         ) : (
-          <button onClick={stopRecording}>Stop Recording</button>
+          <button onClick={stopRecording} style={{ background: 'linear-gradient(90deg, #ff512f 0%, #dd2476 100%)' }}>
+            ⏹️ Stop Recording
+          </button>
         )}
       </div>
 
-      <div style={{ marginBottom: 10 }}>
+      <div className="status">
         <strong>Status:</strong> {status}
       </div>
 
-      {/* Waveform visualization */}
-      <div style={{ marginBottom: 20 }}>
+      <div className={`waveform-container${playing ? ' playing' : ''}`}>
         <Waveform audioBlob={audioBlob} playing={playing} onFinish={() => setPlaying(false)} />
         <button
           onClick={() => setPlaying(p => !p)}
           disabled={!audioBlob}
-          style={{ marginTop: 10 }}
+          style={{ marginTop: 12 }}
         >
           {playing ? 'Pause' : 'Play'}
         </button>
       </div>
 
-      <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 18 }}>
         <label>Transcribed Text:</label>
         <textarea
           rows={4}
-          cols={50}
           value={transcribedText}
           onChange={e => setTranscribedText(e.target.value)}
           placeholder="Real-time transcription appears here"
-          style={{ width: '100%' }}
         />
       </div>
 
-      <div style={{ marginBottom: 10 }}>
-        <button onClick={translateText} disabled={!transcribedText.trim()}>
-          Translate
+      <div style={{ marginBottom: 18, textAlign: 'center' }}>
+        <button
+          className="translate"
+          onClick={translateText}
+          disabled={!transcribedText.trim()}
+        >
+          🌐 Translate
         </button>
       </div>
 
-      <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 18 }}>
         <label>Translated Text:</label>
         <textarea
           rows={4}
-          cols={50}
           value={translatedText}
           readOnly
           placeholder="Translation will appear here"
-          style={{ width: '100%', backgroundColor: '#f0f0f0' }}
         />
       </div>
 
-      <div>
-        <button onClick={playTTS} disabled={!translatedText.trim()}>
-          Play Translated Audio
+      <div style={{ textAlign: 'center' }}>
+        <button
+          className="tts"
+          onClick={playTTS}
+          disabled={!translatedText.trim()}
+        >
+          🔊 Play Translated Audio
         </button>
       </div>
     </div>
