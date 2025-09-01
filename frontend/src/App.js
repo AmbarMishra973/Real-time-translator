@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import Waveform from './Waveform';
 
 function App() {
   const [recording, setRecording] = useState(false);
@@ -7,8 +8,13 @@ function App() {
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('hi');
   const [status, setStatus] = useState('');
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [playing, setPlaying] = useState(false);
+
   const socketRef = useRef(null);
   const mediaStreamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   const languageOptions = [
     { label: 'English', value: 'en' },
@@ -16,6 +22,7 @@ function App() {
     { label: 'Chinese', value: 'zh' },
   ];
 
+  // Start recording with streaming via WebSocket
   const startRecording = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert('Your browser does not support audio recording.');
@@ -26,6 +33,22 @@ function App() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
 
+      // Use MediaRecorder for capturing audio blob for waveform
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = e => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(blob);
+      };
+
+      mediaRecorderRef.current.start();
+
+      // Setup WebSocket streaming as before
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContext.createMediaStreamSource(stream);
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
@@ -40,7 +63,7 @@ function App() {
       socketRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.text) {
-          setTranscribedText(prev => prev + ' ' + data.text);
+          setTranscribedText(prev => prev ? prev + ' ' + data.text : data.text);
           setStatus(`Detected language: ${data.detected_lang} (confidence: ${data.confidence})`);
         }
       };
@@ -60,7 +83,6 @@ function App() {
       source.connect(processor);
       processor.connect(audioContext.destination);
 
-      // Store nodes for cleanup
       socketRef.current.audioContext = audioContext;
       socketRef.current.processor = processor;
     } catch (err) {
@@ -83,6 +105,10 @@ function App() {
 
     if (socketRef.current?.audioContext) {
       socketRef.current.audioContext.close();
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
     }
 
     setRecording(false);
@@ -197,6 +223,18 @@ function App() {
 
       <div style={{ marginBottom: 10 }}>
         <strong>Status:</strong> {status}
+      </div>
+
+      {/* Waveform visualization */}
+      <div style={{ marginBottom: 20 }}>
+        <Waveform audioBlob={audioBlob} playing={playing} onFinish={() => setPlaying(false)} />
+        <button
+          onClick={() => setPlaying(p => !p)}
+          disabled={!audioBlob}
+          style={{ marginTop: 10 }}
+        >
+          {playing ? 'Pause' : 'Play'}
+        </button>
       </div>
 
       <div style={{ marginBottom: 10 }}>
