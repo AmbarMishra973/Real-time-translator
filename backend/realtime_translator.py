@@ -18,23 +18,28 @@ from deep_translator import GoogleTranslator
 from faster_whisper import WhisperModel
 import edge_tts
 from pydub import AudioSegment
+
 if platform.system() == "Windows":
     import winsound
 
+# Map language codes to Edge TTS voices
 VOICE_MAP = {
     'en': 'en-US-JennyNeural',
     'hi': 'hi-IN-SwaraNeural',
     'zh': 'zh-CN-XiaoxiaoNeural',
 }
 
+
 def norm_lang_for_voice(lang_code: str) -> str:
     if not lang_code:
         return 'en'
     return lang_code.split('-')[0].lower()
 
+
 def pick_voice(lang_code: str) -> str:
     base = norm_lang_for_voice(lang_code)
     return VOICE_MAP.get(base, 'en-US-JennyNeural')
+
 
 @dataclass
 class AppArgs:
@@ -44,6 +49,7 @@ class AppArgs:
     whisper_size: str
     rate: int
     min_utt_s: float
+
 
 class SimpleRecorder:
     def __init__(self, rate=16000, duration_s=7):
@@ -55,14 +61,16 @@ class SimpleRecorder:
         audio = sd.rec(int(self.duration_s * self.rate), samplerate=self.rate, channels=1, dtype='float32')
         sd.wait()
         audio = audio / (np.max(np.abs(audio)) + 1e-6)
-        pcm16 = (audio[:,0] * 32767).astype(np.int16).tobytes()
+        pcm16 = (audio[:, 0] * 32767).astype(np.int16).tobytes()
         return pcm16
 
     @contextlib.contextmanager
     def pause_for_playback(self):
         yield
 
-def pcm16_to_wav_bytes(pcm16: bytes, rate: int) -> bytes:
+
+def pcm16_to_wav_bytes(pcm16: bytes, rate: int = 16000) -> bytes:
+    """Convert raw PCM16 audio bytes to a WAV file in memory"""
     import wave
     buf = io.BytesIO()
     with wave.open(buf, 'wb') as wf:
@@ -73,9 +81,15 @@ def pcm16_to_wav_bytes(pcm16: bytes, rate: int) -> bytes:
     return buf.getvalue()
 
 
+# Shared Whisper model instance
+_model = None
+
 def init_whisper(size: str, device: str) -> WhisperModel:
-    compute_type = 'float16' if device == 'cuda' else 'int8'
-    return WhisperModel(model_size_or_path=size, device=device, compute_type=compute_type)
+    global _model
+    if _model is None:
+        compute_type = 'float16' if device == 'cuda' else 'int8'
+        _model = WhisperModel(model_size_or_path=size, device=device, compute_type=compute_type)
+    return _model
 
 
 def transcribe_whisper(model: WhisperModel, wav_bytes: bytes, forced_lang: str):
@@ -85,8 +99,20 @@ def transcribe_whisper(model: WhisperModel, wav_bytes: bytes, forced_lang: str):
     return ' '.join(text_parts).strip(), info.language, info.language_probability
 
 
+def transcribe_realtime(wav_bytes: bytes):
+    """
+    Real-time WebSocket-compatible transcription using VAD
+    """
+    model = init_whisper("small", "cpu")  # You can change model size/device here
+    with io.BytesIO(wav_bytes) as f:
+        segments, info = model.transcribe(f, beam_size=5, vad_filter=True, language="auto")
+        text_parts = [seg.text for seg in segments]
+    return ' '.join(text_parts).strip(), info.language, info.language_probability
+
+
 def translate_text(text: str, target_lang: str) -> str:
     return GoogleTranslator(source='auto', target=target_lang).translate(text)
+
 
 async def tts_to_mp3_bytes(text: str, voice: str) -> bytes:
     communicate = edge_tts.Communicate(text, voice)
@@ -95,6 +121,7 @@ async def tts_to_mp3_bytes(text: str, voice: str) -> bytes:
         if chunk["type"] == "audio":
             out.write(chunk["data"])
     return out.getvalue()
+
 
 def play_mp3_bytes(mp3_bytes: bytes, recorder: SimpleRecorder):
     with recorder.pause_for_playback():
@@ -110,6 +137,7 @@ def play_mp3_bytes(mp3_bytes: bytes, recorder: SimpleRecorder):
                 play(AudioSegment.from_wav(tmp_path))
         finally:
             os.remove(tmp_path)
+
 
 def log(msg: str):
     print(time.strftime('%H:%M:%S'), msg, flush=True)
@@ -156,7 +184,7 @@ def run_app(args: AppArgs):
                 log(f"TTS/playback error: {e}")
                 continue
 
-            log(f"Latency: {(time.time()-t0)*1000:.0f} ms\n")
+            log(f"Latency: {(time.time() - t0) * 1000:.0f} ms\n")
 
     except KeyboardInterrupt:
         log("Stopping…")
