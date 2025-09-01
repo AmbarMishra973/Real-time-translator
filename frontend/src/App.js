@@ -7,10 +7,15 @@ function App() {
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('hi');
   const [status, setStatus] = useState('');
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  const socketRef = useRef(null);
+  const mediaStreamRef = useRef(null);
 
-  // Start recording
+  const languageOptions = [
+    { label: 'English', value: 'en' },
+    { label: 'Hindi', value: 'hi' },
+    { label: 'Chinese', value: 'zh' },
+  ];
+
   const startRecording = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert('Your browser does not support audio recording.');
@@ -19,62 +24,80 @@ function App() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = [];
+      mediaStreamRef.current = stream;
 
-      mediaRecorderRef.current.ondataavailable = event => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+      socketRef.current = new WebSocket('ws://localhost:8000/ws/transcribe');
+
+      socketRef.current.onopen = () => {
+        setStatus('Streaming to server...');
+        setRecording(true);
+      };
+
+      socketRef.current.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.text) {
+          setTranscribedText(prev => prev + ' ' + data.text);
+          setStatus(`Detected language: ${data.detected_lang} (confidence: ${data.confidence})`);
         }
       };
 
-      mediaRecorderRef.current.onstop = handleRecordingStop;
+      socketRef.current.onerror = (err) => {
+        setStatus('WebSocket error: ' + err.message);
+      };
 
-      mediaRecorderRef.current.start();
-      setRecording(true);
-      setStatus('Recording...');
+      processor.onaudioprocess = (e) => {
+        const inputData = e.inputBuffer.getChannelData(0);
+        const pcmData = convertFloat32ToInt16(inputData);
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+          socketRef.current.send(pcmData);
+        }
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      // Store nodes for cleanup
+      socketRef.current.audioContext = audioContext;
+      socketRef.current.processor = processor;
     } catch (err) {
-      alert('Could not start recording: ' + err.message);
+      alert('Error starting recording: ' + err.message);
     }
   };
 
-  // Stop recording
   const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      setRecording(false);
-      setStatus('Processing audio...');
+    if (socketRef.current) {
+      socketRef.current.close();
     }
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+
+    if (socketRef.current?.processor) {
+      socketRef.current.processor.disconnect();
+    }
+
+    if (socketRef.current?.audioContext) {
+      socketRef.current.audioContext.close();
+    }
+
+    setRecording(false);
+    setStatus('Stopped streaming.');
   };
 
-  // Handle audio after recording stopped
-  const handleRecordingStop = async () => {
-    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-    // Send to backend
-    try {
-      const formData = new FormData();
-      formData.append('file', audioBlob, 'recording.wav');
-      formData.append('lang', sourceLang);
-
-      setStatus('Sending audio for transcription...');
-      const res = await fetch('http://localhost:8000/transcribe', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error(`Transcription failed: ${res.statusText}`);
-      }
-
-      const data = await res.json();
-      setTranscribedText(data.text || '');
-      setStatus(`Detected language: ${data.detected_lang} (confidence: ${data.confidence.toFixed(2)})`);
-    } catch (err) {
-      setStatus('Error: ' + err.message);
+  const convertFloat32ToInt16 = (buffer) => {
+    let l = buffer.length;
+    const buf = new Int16Array(l);
+    for (let i = 0; i < l; i++) {
+      buf[i] = Math.min(1, buffer[i]) * 0x7FFF;
     }
+    return new Int16Array(buf).buffer;
   };
 
-  // Handle translation
   const translateText = async () => {
     if (!transcribedText.trim()) {
       alert('Please provide some text to translate.');
@@ -92,10 +115,6 @@ function App() {
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error(`Translation failed: ${res.statusText}`);
-      }
-
       const data = await res.json();
       setTranslatedText(data.translated);
       setStatus('Translation complete.');
@@ -104,22 +123,20 @@ function App() {
     }
   };
 
-  // Play TTS audio
   const playTTS = async () => {
     if (!translatedText.trim()) {
       alert('No translated text to play.');
       return;
     }
 
-    try {
-      // Choose voice based on targetLang (simple map)
-      const voiceMap = {
-        en: 'en-US-JennyNeural',
-        hi: 'hi-IN-SwaraNeural',
-        zh: 'zh-CN-XiaoxiaoNeural',
-      };
-      const voice = voiceMap[targetLang] || 'en-US-JennyNeural';
+    const voiceMap = {
+      en: 'en-US-JennyNeural',
+      hi: 'hi-IN-SwaraNeural',
+      zh: 'zh-CN-XiaoxiaoNeural',
+    };
+    const voice = voiceMap[targetLang] || 'en-US-JennyNeural';
 
+    try {
       const formData = new FormData();
       formData.append('text', translatedText);
       formData.append('voice', voice);
@@ -129,10 +146,6 @@ function App() {
         method: 'POST',
         body: formData,
       });
-
-      if (!res.ok) {
-        throw new Error(`TTS failed: ${res.statusText}`);
-      }
 
       const audioBlob = await res.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
@@ -146,35 +159,37 @@ function App() {
 
   return (
     <div style={{ maxWidth: 600, margin: 'auto', padding: 20, fontFamily: 'Arial, sans-serif' }}>
-      <h1>Real-time Speech Translator</h1>
+      <h1>Real-Time Speech Translator</h1>
 
       <div style={{ marginBottom: 10 }}>
         <label>
           Source Language:{' '}
-          <input
-            value={sourceLang}
-            onChange={e => setSourceLang(e.target.value)}
-            placeholder="e.g., en"
-            style={{ width: 50 }}
-          />
+          <select value={sourceLang} onChange={e => setSourceLang(e.target.value)}>
+            {languageOptions.map(lang => (
+              <option key={lang.value} value={lang.value}>
+                {lang.label}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 
       <div style={{ marginBottom: 10 }}>
         <label>
           Target Language:{' '}
-          <input
-            value={targetLang}
-            onChange={e => setTargetLang(e.target.value)}
-            placeholder="e.g., hi"
-            style={{ width: 50 }}
-          />
+          <select value={targetLang} onChange={e => setTargetLang(e.target.value)}>
+            {languageOptions.map(lang => (
+              <option key={lang.value} value={lang.value}>
+                {lang.label}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 
       <div style={{ marginBottom: 10 }}>
         {!recording ? (
-          <button onClick={startRecording}>Start Recording</button>
+          <button onClick={startRecording}>Start Real-Time Recording</button>
         ) : (
           <button onClick={stopRecording}>Stop Recording</button>
         )}
@@ -191,7 +206,7 @@ function App() {
           cols={50}
           value={transcribedText}
           onChange={e => setTranscribedText(e.target.value)}
-          placeholder="Transcription will appear here"
+          placeholder="Real-time transcription appears here"
           style={{ width: '100%' }}
         />
       </div>
@@ -209,7 +224,7 @@ function App() {
           cols={50}
           value={translatedText}
           readOnly
-          placeholder="Translated text will appear here"
+          placeholder="Translation will appear here"
           style={{ width: '100%', backgroundColor: '#f0f0f0' }}
         />
       </div>
