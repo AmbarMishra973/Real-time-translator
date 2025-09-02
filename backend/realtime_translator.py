@@ -220,4 +220,3 @@ if __name__ == '__main__':
     print("Tip: wear headphones to avoid feedback. Speak a short sentence and pause.")
     print("------------------------------------------\n")
     run_app(cfg)
-a
