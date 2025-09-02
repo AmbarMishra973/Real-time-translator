@@ -82,4 +82,4 @@ def pcm16_to_wav_bytes(pcm16_bytes: bytes, rate: int = 16000) -> bytes:
         wf.setsampwidth(2)
         wf.setframerate(rate)
         wf.writeframes(pcm16_bytes)
-    return buf.getvalue()  return;
+    return buf.getvalue()  
