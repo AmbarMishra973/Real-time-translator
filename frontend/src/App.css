@@ -79,7 +79,7 @@ button.tts {
   margin-bottom: 24px;
   padding: 18px;
   border-radius: 18px;
-  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+  background: linear-gradient(90deg, #660cc7 0%, #2575fc 100%);
   box-shadow: 0 0 12px #2575fc66;
   transition: background 0.3s, box-shadow 0.3s;
   text-align: center;
