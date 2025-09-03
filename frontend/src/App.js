@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import './App.css';
+import Waveform from './Waveform'; // Make sure this path is correct
 
 function App() {
   const [recording, setRecording] = useState(false);
