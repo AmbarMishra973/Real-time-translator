@@ -1,0 +1,31 @@
+# Business & Corporate Terms Knowledge Base for AI Translator & RAG
+
+ROI:
+Return on Investment. A financial metric used to evaluate the profitability or efficiency of an investment relative to its cost. Usually kept as 'ROI' in corporate discourse.
+
+Sprint:
+A set period of time (typically 1 to 4 weeks) during which specific work or software features must be completed and made ready for review in Agile methodologies.
+
+KPI:
+Key Performance Indicator. A quantifiable measure of performance over time for a specific objective, team, or project milestone.
+
+Stakeholders:
+Individuals, teams, or groups that have an interest in or are affected by the outcome of a business initiative, product, or project.
+
+Deliverables:
+Tangible or intangible goods, software features, or services that must be provided upon the completion of a project or milestone.
+
+Quarterly Review:
+A formal evaluation meeting conducted every three months to assess financial performance, project progress, and strategic company targets.
+
+Bandwidth:
+In business terminology, the capacity or availability of an individual or team to take on additional tasks, responsibilities, or projects.
+
+Scope Creep:
+The uncontrolled expansion or continuous growth in a project's scope or requirements without adjustments to time, cost, and resources.
+
+Burn Rate:
+The rate at which a startup or company spends its venture capital or cash reserves before generating positive cash flow from operations.
+
+Synergy:
+The combined interaction or cooperation of two or more organizations, teams, or substances to produce a combined effect greater than the sum of their separate effects.

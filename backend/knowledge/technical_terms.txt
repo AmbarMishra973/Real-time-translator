@@ -1,0 +1,52 @@
+# Technical Terms Knowledge Base for AI Translator & RAG
+
+RAG Architecture:
+The end-to-end framework integrating retrieval systems (vector databases) with generative Large Language Models. Ensures grounded responses, eliminates hallucinations, and provides domain-specific knowledge augmentation before response synthesis. Keep as 'RAG Architecture'.
+
+Vector Database:
+A specialized database optimized for storing, indexing, and querying high-dimensional vector embeddings rapidly using similarity search algorithms like Cosine Similarity or HNSW. Examples include Chroma, Pinecone, FAISS, and Milvus. Keep as 'Vector Database'.
+
+LLM Context:
+The context window and token budget provided to a Large Language Model during inference, containing system prompts, retrieved external knowledge, and conversation history for contextual grounding.
+
+API:
+Application Programming Interface. A set of protocols, routines, and tools for building software applications. Specifies how software components should interact. Keep the term as 'API' in translations.
+
+RAG:
+Retrieval-Augmented Generation. An AI architecture where an external vector database or information retrieval system provides relevant factual context to a Large Language Model (LLM) before generating answers. Translate conceptually while preserving 'RAG' and 'LLM'.
+
+Kubernetes:
+An open-source container orchestration system for automating application deployment, scaling, and management. Typically abbreviated as K8s. Preserve 'Kubernetes' in translations.
+
+Docker:
+A platform that uses OS-level virtualization to deliver software in packages called containers. Preserve 'Docker' and 'containers' in translations.
+
+CI/CD:
+Continuous Integration and Continuous Deployment / Delivery. A modern software engineering methodology that automates code testing, building, and deployment pipelines.
+
+Microservices:
+An architectural style that structures an application as a collection of small, autonomous, loosely coupled services modeled around a business domain.
+
+Latency:
+The delay or time elapsed between a user request and the system's response. In real-time AI and audio streaming, latency is measured in milliseconds (ms).
+
+LLM:
+Large Language Model. Deep neural network models trained on massive text corpora capable of natural language understanding, generation, translation, and reasoning.
+
+Prompt Engineering:
+The practice of crafting, refining, and optimizing natural language inputs and instructions given to generative AI models to achieve desired outputs.
+
+Deployment:
+The process of packaging, configuring, and publishing an application or model onto a server, cluster, or cloud platform so it becomes accessible to users.
+
+Frontend:
+The presentation layer of a software system that users interact with directly, usually built with HTML, CSS, JavaScript, or React.
+
+Backend:
+The server-side component of an application responsible for data processing, business logic, APIs, database transactions, and model inference.
+
+Throughput:
+The number of requests, units of data, or tokens processed by a system within a given time interval.
+
+Caching:
+A high-speed data storage layer that stores a subset of transient data, so future requests for that data can be served faster than querying the primary storage.

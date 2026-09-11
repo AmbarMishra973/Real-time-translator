@@ -1,0 +1,25 @@
+# Medical & Healthcare Terms Knowledge Base for AI Translator & RAG
+
+Hypertension:
+Abnormally high blood pressure in the arteries, commonly defined as blood pressure reading above 130/80 mmHg.
+
+Diagnosis:
+The identification of the nature of an illness or other health problem by examination of physical symptoms, lab tests, and medical history.
+
+Prescription:
+A formal written instruction by a qualified medical practitioner authorizing a patient to be provided a medicine or treatment.
+
+Triage:
+The assignment of degrees of urgency to wounds or illnesses to decide the order of treatment of a large number of patients or casualties.
+
+Outpatient:
+A patient who attends a hospital or clinic for medical consultation or treatment without staying overnight.
+
+Prognosis:
+The likely course, progression, and outcome of a medical condition or disease.
+
+Contraindication:
+A specific situation or condition in which a drug, procedure, or surgery should not be used because it may be harmful to the patient.
+
+Chronic Disease:
+A human health condition or disease that is persistent or otherwise long-lasting in its effects, typically lasting 3 months or more.
