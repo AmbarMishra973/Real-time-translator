@@ -1,7 +1,9 @@
 """
-Real-Time Two‑Way Speech Translator with confirmation before translation
+Real-Time Two-Way AI Speech Translator + RAG CLI.
+Microphone ➔ Faster-Whisper STT ➔ Semantic RAG Retriever ➔ LLM Contextual Translation ➔ Edge-TTS
 """
 
+import sys
 import argparse
 import asyncio
 import contextlib
@@ -12,12 +14,21 @@ import os
 import tempfile
 import platform
 
+# Ensure UTF-8 output on Windows consoles
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 import numpy as np
 import sounddevice as sd
-from deep_translator import GoogleTranslator
 from faster_whisper import WhisperModel
 import edge_tts
 from pydub import AudioSegment
+
+from backend.rag_engine import rag_engine
+from backend.llm_translator import llm_translator
 
 if platform.system() == "Windows":
     import winsound
@@ -27,6 +38,9 @@ VOICE_MAP = {
     'en': 'en-US-JennyNeural',
     'hi': 'hi-IN-SwaraNeural',
     'zh': 'zh-CN-XiaoxiaoNeural',
+    'es': 'es-ES-ElviraNeural',
+    'fr': 'fr-FR-DeniseNeural',
+    'de': 'de-DE-KatjaNeural',
 }
 
 
@@ -49,15 +63,16 @@ class AppArgs:
     whisper_size: str
     rate: int
     min_utt_s: float
+    domain: str
 
 
 class SimpleRecorder:
-    def __init__(self, rate=16000, duration_s=7):
+    def __init__(self, rate=16000, duration_s=5):
         self.rate = rate
         self.duration_s = duration_s
 
     def record(self):
-        print(f"Recording {self.duration_s}s audio...")
+        print(f"\n🎤 Recording {self.duration_s}s audio... Speak now!")
         audio = sd.rec(int(self.duration_s * self.rate), samplerate=self.rate, channels=1, dtype='float32')
         sd.wait()
         audio = audio / (np.max(np.abs(audio)) + 1e-6)
@@ -81,7 +96,6 @@ def pcm16_to_wav_bytes(pcm16: bytes, rate: int = 16000) -> bytes:
     return buf.getvalue()
 
 
-# Shared Whisper model instance
 _model = None
 
 def init_whisper(size: str, device: str) -> WhisperModel:
@@ -94,24 +108,9 @@ def init_whisper(size: str, device: str) -> WhisperModel:
 
 def transcribe_whisper(model: WhisperModel, wav_bytes: bytes, forced_lang: str):
     with io.BytesIO(wav_bytes) as f:
-        segments, info = model.transcribe(f, beam_size=5, vad_filter=False, language=forced_lang)
+        segments, info = model.transcribe(f, beam_size=5, vad_filter=True, language=forced_lang)
         text_parts = [seg.text for seg in segments]
     return ' '.join(text_parts).strip(), info.language, info.language_probability
-
-
-def transcribe_realtime(wav_bytes: bytes):
-    """
-    Real-time WebSocket-compatible transcription using VAD
-    """
-    model = init_whisper("small", "cpu")  # You can change model size/device here
-    with io.BytesIO(wav_bytes) as f:
-        segments, info = model.transcribe(f, beam_size=5, vad_filter=True, language="auto")
-        text_parts = [seg.text for seg in segments]
-    return ' '.join(text_parts).strip(), info.language, info.language_probability
-
-
-def translate_text(text: str, target_lang: str) -> str:
-    return GoogleTranslator(source='auto', target=target_lang).translate(text)
 
 
 async def tts_to_mp3_bytes(text: str, voice: str) -> bytes:
@@ -136,11 +135,14 @@ def play_mp3_bytes(mp3_bytes: bytes, recorder: SimpleRecorder):
                 from pydub.playback import play
                 play(AudioSegment.from_wav(tmp_path))
         finally:
-            os.remove(tmp_path)
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
 
 
 def log(msg: str):
-    print(time.strftime('%H:%M:%S'), msg, flush=True)
+    print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def run_app(args: AppArgs):
@@ -148,7 +150,11 @@ def run_app(args: AppArgs):
     model = init_whisper(args.whisper_size, args.device)
 
     recorder = SimpleRecorder(rate=args.rate, duration_s=args.min_utt_s)
-    log("Listening… (Ctrl+C to stop)")
+    session_id = f"cli_{int(time.time())}"
+
+    log(f"RAG Knowledge loaded: {len(rag_engine.chunks)} terms across {rag_engine.get_domains()}")
+    log(f"Translator status: {llm_translator.get_status()['active_mode']}")
+    log("Listening… (Press Ctrl+C to stop)")
 
     try:
         while True:
@@ -156,25 +162,34 @@ def run_app(args: AppArgs):
             wav_bytes = pcm16_to_wav_bytes(utter_pcm, args.rate)
             t0 = time.time()
             text, lang, p = transcribe_whisper(model, wav_bytes, args.lang_a)
-            if not text:
+
+            if not text or len(text.strip()) < 2:
+                log("No speech detected. Listening again...")
                 continue
 
-            log(f"Heard [{lang or 'unknown'} {p:.2f}]: {text}")
+            log(f"Heard [{lang or 'unknown'} {p:.2f}]: \"{text}\"")
 
-            # Confirm with user before translation
-            confirm = input(f"Did you say '{text}'? (y/n): ").strip().lower()
-            if confirm != 'y':
-                log("Re-recording...")
-                continue
+            # Determine target language
+            target_lang = args.lang_b if (lang and lang.lower().startswith(args.lang_a.lower())) else args.lang_a
 
-            target_lang = args.lang_b if lang.lower().startswith(args.lang_a.lower()) else args.lang_a
-            try:
-                translated = translate_text(text, target_lang)
-            except Exception as e:
-                log(f"Translate error: {e}")
-                continue
+            # Execute RAG-augmented translation
+            result = llm_translator.translate(
+                text=text,
+                source_lang=lang or args.lang_a,
+                target_lang=target_lang,
+                session_id=session_id,
+                domain=args.domain
+            )
 
-            log(f"→ ({target_lang}) {translated}")
+            retrieved = result.get("retrieved_context", [])
+            if retrieved:
+                print("\n  🔍 [RAG Context Retrieved]:")
+                for item in retrieved:
+                    print(f"     • {item['term']} (score: {item['score']}): {item['definition']}")
+                print()
+
+            translated = result["translated_text"]
+            log(f"→ ({target_lang}) [{result['provider']}]: \"{translated}\"")
 
             voice = pick_voice(target_lang)
             try:
@@ -182,25 +197,24 @@ def run_app(args: AppArgs):
                 play_mp3_bytes(mp3_bytes, recorder)
             except Exception as e:
                 log(f"TTS/playback error: {e}")
-                continue
 
-            log(f"Latency: {(time.time() - t0) * 1000:.0f} ms\n")
+            log(f"Total Pipeline Latency: {(time.time() - t0) * 1000:.0f} ms\n" + "-" * 50)
 
     except KeyboardInterrupt:
         log("Stopping…")
 
 
 def parse_args() -> AppArgs:
-    print("Select source language (e.g., en for English, hi for Hindi, zh for Chinese):")
-    lang_a = input("Source language: ").strip() or 'en'
-    print("Select target language (e.g., en for English, hi for Hindi, zh for Chinese):")
-    lang_b = input("Target language: ").strip() or 'hi'
+    print("\n=== Real-Time AI Speech Translator + RAG ===")
+    lang_a = input("Source language [default 'en']: ").strip() or 'en'
+    lang_b = input("Target language [default 'hi']: ").strip() or 'hi'
+    domain = input("Knowledge Domain (all/technical/business/medical) [default 'all']: ").strip() or 'all'
 
-    ap = argparse.ArgumentParser(description="Real-time two-way speech translator (VAD-free)")
+    ap = argparse.ArgumentParser(description="Real-time AI speech translator with RAG")
     ap.add_argument('--device', default='cpu', choices=['cpu', 'cuda'])
     ap.add_argument('--whisper-size', default='small')
     ap.add_argument('--rate', type=int, default=16000)
-    ap.add_argument('--min-utt-s', type=float, default=7.0, help='Recording chunk length in seconds')
+    ap.add_argument('--min-utt-s', type=float, default=5.0, help='Recording chunk length in seconds')
     ns = ap.parse_args([])
 
     return AppArgs(
@@ -210,13 +224,12 @@ def parse_args() -> AppArgs:
         whisper_size=ns.whisper_size,
         rate=ns.rate,
         min_utt_s=ns.min_utt_s,
+        domain=domain
     )
 
 
 if __name__ == '__main__':
     cfg = parse_args()
-    print(f"\n=== Real-Time Two‑Way Speech Translator ===")
-    print(f"A↔B languages: {cfg.lang_a} ↔ {cfg.lang_b}")
-    print("Tip: wear headphones to avoid feedback. Speak a short sentence and pause.")
+    print(f"\nA ↔ B: {cfg.lang_a} ↔ {cfg.lang_b} | Domain: {cfg.domain}")
     print("------------------------------------------\n")
     run_app(cfg)
