@@ -181,7 +181,14 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
 
 # === API Endpoints ===
 
-@app.get("/")
+@app.get("/health", status_code=200)
+@app.head("/health", status_code=200)
+def health_check():
+    return {"status": "ok", "service": "Real-Time AI Translator + RAG"}
+
+
+@app.get("/", status_code=200)
+@app.head("/", status_code=200)
 def root():
     return {
         "service": "Real-Time AI Translator + RAG",
