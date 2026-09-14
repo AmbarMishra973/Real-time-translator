@@ -1,142 +1,149 @@
-# 🌐 Real-Time AI Translator + RAG
+# Real-Time AI Speech Translator with RAG
 
-An end-to-end Speech-to-Speech translation system combining **Faster-Whisper STT**, a **Semantic RAG Vector Retrieval Engine**, a **Context-Aware LLM Translator**, and **Microsoft Edge-TTS**.
+An end-to-end Speech-to-Speech translation pipeline combining **Faster-Whisper Speech-to-Text**, a **Vector RAG Retrieval Engine**, a **Context-Aware LLM Translator** (Groq LLaMA 3.3 70B / Local Multilingual Engine), and **Microsoft Edge-TTS**.
 
 ```
-                         USER
-                          │
-                          ▼
-                    🎤 Microphone
-                          │
-                          ▼
-                    ┌──────────┐
-                    │ Whisper  │
-                    │   STT    │
-                    └────┬─────┘
-                         │
-                         ▼
-                     Transcript
-                         │
-                         ▼
-                 ┌───────────────┐
-                 │   Embedding   │
-                 │   & Vector    │
-                 │    Search     │
-                 └───────┬───────┘
-                         │
-                         ▼
-                  Relevant Context (RAG)
-                         │
-                         ▼
-                ┌─────────────────┐
-                │      LLM        │
-                │  (Groq / Llama) │
-                │  + Conversation │
-                │     Context     │
-                └────────┬────────┘
-                         │
-                         ▼
-                  Translated Text
-                         │
-                         ▼
-                     Edge-TTS
-                         │
-                         ▼
-                    🔊 Speaker
+                   [ User Speech Input ]
+                             │
+                             ▼
+                   🎤 Microphone / Audio
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │ Faster-Whisper  │ (Speech-to-Text)
+                    └────────┬────────┘
+                             │
+                        Transcript
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │   RAG Engine    │ (Vector Retrieval & Grounding)
+                    └────────┬────────┘
+                             │
+                     Domain Context
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │ LLM Translator  │ (Groq LLaMA 3.3 70B / Local Engine)
+                    └────────┬────────┘ + Multi-Turn History
+                             │
+                      Translated Text
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │    Edge-TTS     │ (Neural Speech Synthesis)
+                    └────────┬────────┘
+                             │
+                             ▼
+                   🔊 Translated Audio Output
 ```
 
 ---
 
-## ✨ Features
+## Technical Architecture & Core System Design
 
-- **🎙️ Real-Time Speech-to-Text (Whisper)**: Accurate transcription using `faster-whisper` running locally with VAD filtering.
-- **🔍 Domain Knowledge Retrieval (RAG)**: Built-in glossaries (`technical_terms.txt`, `business_terms.txt`, `medical_terms.txt`) indexed into an in-memory vector database with TF-IDF/n-gram cosine similarity. Also supports on-the-fly custom term addition and dynamic vector re-indexing.
-- **🧠 Context-Aware LLM Translation**: Uses Groq (`llama-3.3-70b-versatile` or `llama-3.1-8b-instant`) for ultra-low latency contextual translations, preserving technical terminology and loan words.
-- **💬 Multi-Turn Conversation Memory**: Tracks previous conversation turns per session to resolve ambiguous pronouns (*"it"*, *"they"*, *"we"*) and maintain natural continuity.
-- **🔊 Neural Speech Synthesis (Edge-TTS)**: Produces natural multilingual speech output in Hindi (`hi-IN-SwaraNeural`), English, Spanish, French, German, Chinese, etc.
-- **⚡ Zero-Crash Fallback**: Automatically falls back to a term-preserving translator if no API key is provided, ensuring out-of-the-box functionality.
-- **💎 Modern Web Interface**: Glassmorphism dark mode UI featuring live pipeline status, audio visualizer waveform, real-time RAG context inspector cards, conversation memory timeline, and knowledge base manager.
-- **💻 Standalone CLI**: Interactive terminal translator (`python -m backend.realtime_translator`) for quick console tests.
+### 1. Speech-to-Text (STT) Layer
+- Powered by `faster-whisper` (`small`/`base` model using `int8` quantization on CPU).
+- Automatic WebM/Opus to 16kHz mono WAV conversion with audio gain normalization (`-af "volume=1.8"`) to boost soft microphone recordings.
+- Dual-pass Silero VAD filtering and hallucination suppression to filter out silent artifacts.
+
+### 2. Retrieval-Augmented Generation (RAG) Engine
+- Domain-specific glossaries (`technical_terms.txt`, `business_terms.txt`, `medical_terms.txt`) indexed into an in-memory vector store.
+- Cosine similarity retrieval over n-gram TF-IDF embeddings to extract technical terminology and grounding context.
+- Prevents spurious matches on casual speech while preserving domain jargon (e.g., *Kubernetes*, *RAG Architecture*, *Vector Database*).
+
+### 3. Context-Aware LLM Translation
+- Primary engine: **Groq Cloud API** (`llama-3.3-70b-versatile` / `llama-3.1-8b-instant`) for ultra-low latency translations (~200ms).
+- Zero-crash fallback: Local multilingual engine operating out-of-the-box without requiring API keys.
+- Multi-turn conversation manager: Retains session state to resolve ambiguous pronouns (*it*, *they*, *this*) across dialogue turns.
+
+### 4. Neural Speech Synthesis (TTS) Layer
+- Synthesizes translated text into high-quality neural voice streams using `edge_tts`.
+- Language-to-Voice mapping (`hi-IN-SwaraNeural` for Hindi, `en-US-JennyNeural` for English, `es-ES-ElviraNeural` for Spanish, etc.).
+
+### 5. Web Interface & Benchmarking
+- Built with React 19 and custom Vanilla CSS.
+- Real-time pipeline step indicator and end-to-end execution latency benchmarking bar (`STT`, `RAG`, `LLM`, `TTS`, `Total`).
 
 ---
 
-## 🚀 Quick Start
+## Local Setup & Execution
+
+### Prerequisites
+- Python 3.10+ installed
+- Node.js 18+ installed
+- FFmpeg installed and available on system PATH
 
 ### 1. Backend Setup
 
 ```bash
 cd backend
+
+# Install Python dependencies
 pip install -r requirements.txt
 ```
 
-*(Optional) Configure API Keys for Groq / OpenAI:*
-Copy `.env.example` to `.env` and add your Groq key (get a free key at [console.groq.com](https://console.groq.com)):
+*(Optional) Configure Groq API Key for Cloud LLM:*
+Copy `.env.example` to `.env` and set your key from [console.groq.com](https://console.groq.com):
 ```env
 GROQ_API_KEY=gsk_your_key_here
 GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-Start the FastAPI Server:
+Start the FastAPI server:
 ```bash
-uvicorn backend.server:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn backend.server:app --host 0.0.0.0 --port 8000
 ```
-API Documentation will be available at: [http://localhost:8000/docs](http://localhost:8000/docs)
+Interactive API Documentation will be available at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ### 2. Frontend Setup
 
+In a new terminal window:
+
 ```bash
 cd frontend
+
+# Install Node dependencies
 npm install
+
+# Start React development server
 npm start
 ```
-The web app opens automatically at [http://localhost:3000](http://localhost:3000).
-
-### 3. Standalone CLI Translator
-
-You can also run the full pipeline entirely in your terminal:
-```bash
-python -m backend.realtime_translator
-```
+The application will open automatically at [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 🧪 Running Automated Tests
+## Running Automated Verification Suite
 
-A complete verification test suite is included:
+Run the end-to-end automated test suite to verify RAG retrieval, translation accuracy, session history retention, and audio synthesis:
+
 ```bash
 python test_system.py
 ```
-This verifies:
-1. Knowledge base parsing and vector indexing
-2. RAG semantic retrieval accuracy
-3. LLM translation and multi-turn context retention
-4. Edge-TTS neural audio synthesis
-5. FastAPI REST API endpoints (`/`, `/translate`, `/tts`, `/api/knowledge`)
 
 ---
 
-## 📂 Project Structure
+## Project Directory Structure
 
 ```
 Real-time-translator/
 ├── backend/
 │   ├── knowledge/               # Domain Knowledge Base Documents
-│   │   ├── technical_terms.txt  # Kubernetes, RAG, Docker, API, etc.
-│   │   ├── business_terms.txt   # ROI, Sprint, KPI, Stakeholders, etc.
-│   │   └── medical_terms.txt    # Hypertension, Triage, Prognosis, etc.
-│   ├── rag_engine.py            # Vector store, chunking & semantic retrieval
-│   ├── llm_translator.py        # Groq/OpenAI client, prompt engine & history
+│   │   ├── technical_terms.txt  # RAG, Kubernetes, Vector DB, API, etc.
+│   │   ├── business_terms.txt   # ROI, KPI, Stakeholders, Sprint, etc.
+│   │   └── medical_terms.txt    # Triage, Prognosis, Hypertension, etc.
+│   ├── rag_engine.py            # Vector store, chunking & similarity retrieval
+│   ├── llm_translator.py        # Groq/OpenAI client, prompt engine & history manager
 │   ├── server.py                # FastAPI REST API & WebSocket server
-│   ├── realtime_translator.py   # Standalone CLI speech translator
+│   ├── realtime_translator.py   # CLI speech translator
 │   ├── requirements.txt         # Python dependencies
-│   └── .env.example             # Environment variables template
+│   └── Dockerfile               # Production container configuration
 ├── frontend/
 │   ├── src/
-│   │   ├── App.js               # Glassmorphism UI & audio pipeline
-│   │   ├── App.css              # Custom styling, dark mode & animations
-│   │   ├── Waveform.js          # Audio waveform visualizer (WaveSurfer)
-│   │   └── index.css            # Base design system & typography
+│   │   ├── App.js               # Main application & audio pipeline
+│   │   ├── App.css              # Glassmorphism dark mode UI styling
+│   │   └── index.css            # Base design system & tokens
 │   └── package.json
-├── test_system.py               # Automated verification suite
+├── test_system.py               # System verification test suite
 └── README.md
 ```
