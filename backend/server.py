@@ -89,13 +89,10 @@ def pcm16_to_wav_bytes(pcm16_bytes: bytes, rate: int = 16000) -> bytes:
 
 def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
     """
-    Converts incoming browser audio (WebM, OGG, MP4, etc.) into clean 16kHz mono WAV PCM.
-    Resolves WebM header missing-duration issues common in browser MediaRecorder streams.
+    Converts and resamples incoming browser audio (WebM, OGG, MP4, WAV, etc.) into clean 16kHz mono WAV PCM.
+    Applies audio volume normalization to boost soft microphone recordings for Whisper STT.
     """
     import subprocess, tempfile, os
-
-    if audio_bytes.startswith(b"RIFF") and b"WAVE" in audio_bytes[:16]:
-        return audio_bytes
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".input_audio") as in_f:
         in_f.write(audio_bytes)
@@ -106,6 +103,7 @@ def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
         cmd = [
             "ffmpeg", "-y", "-i", in_path,
             "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
+            "-af", "volume=1.8",
             out_path
         ]
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -134,21 +132,40 @@ WHISPER_HALLUCINATIONS = {
 
 
 def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
-    # 1. Convert to clean 16kHz mono WAV
+    # 1. Convert & resample to clean 16kHz mono WAV PCM with volume boost
     wav_bytes = convert_to_clean_wav(audio_bytes)
     print(f"[Mic Audio] Received {len(audio_bytes)} bytes -> Clean WAV: {len(wav_bytes)} bytes")
 
     whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
 
-    # 2. Transcribe without aggressive VAD suppression
-    segments, info = whisper_model.transcribe(
-        io.BytesIO(wav_bytes),
-        language=whisper_lang,
-        beam_size=5,
-        vad_filter=False
-    )
-    text_parts = [seg.text for seg in segments]
-    raw_text = ' '.join(text_parts).strip()
+    # 2. Transcribe with VAD filter first
+    try:
+        segments, info = whisper_model.transcribe(
+            io.BytesIO(wav_bytes),
+            language=whisper_lang,
+            beam_size=5,
+            vad_filter=True,
+            vad_parameters=dict(min_silence_duration_ms=300),
+            condition_on_previous_text=False
+        )
+        text_parts = [seg.text for seg in segments]
+        raw_text = ' '.join(text_parts).strip()
+    except Exception as e:
+        print(f"[!] VAD Transcribe Error: {e}, falling back to non-VAD mode...")
+        raw_text = ""
+        info = None
+
+    # Fallback to non-VAD mode if VAD filter suppressed quiet speech
+    if not raw_text:
+        segments, info = whisper_model.transcribe(
+            io.BytesIO(wav_bytes),
+            language=whisper_lang,
+            beam_size=5,
+            vad_filter=False,
+            condition_on_previous_text=False
+        )
+        text_parts = [seg.text for seg in segments]
+        raw_text = ' '.join(text_parts).strip()
 
     # 3. Filter silence hallucinations
     clean_text = raw_text
@@ -156,7 +173,9 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
         print(f"[-] Discarded silence hallucination: '{raw_text}'")
         clean_text = ""
 
-    print(f"[Whisper STT] Heard ({info.language} {info.language_probability:.2f}): \"{clean_text}\"")
+    detected_lang = info.language if info else "en"
+    prob = info.language_probability if info else 1.0
+    print(f"[Whisper STT] Heard ({detected_lang} {prob:.2f}): \"{clean_text}\"")
     return clean_text, info
 
 

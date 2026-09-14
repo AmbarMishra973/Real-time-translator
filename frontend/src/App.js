@@ -28,7 +28,7 @@ function App() {
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('hi');
   const [sessionId] = useState(() => 'sess_' + Math.random().toString(36).substring(2, 8));
-  
+
   // Pipeline Step & Status
   const [currentStep, setCurrentStep] = useState(1);
   const [recording, setRecording] = useState(false);
@@ -85,7 +85,7 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ groq_api_key: savedKey })
-      }).then(() => checkBackendStatus()).catch(() => {});
+      }).then(() => checkBackendStatus()).catch(() => { });
     }
   }, [checkBackendStatus]);
 
@@ -124,7 +124,13 @@ function App() {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      });
       mediaStreamRef.current = stream;
 
       let mimeType = 'audio/webm;codecs=opus';
@@ -163,8 +169,7 @@ function App() {
         await executeAudioPipeline(blob);
       };
 
-      // Request data chunks every 200ms to guarantee continuous audio streaming
-      mediaRecorderRef.current.start(200);
+      mediaRecorderRef.current.start(500);
       setRecording(true);
       setRecordSeconds(0);
       setCurrentStep(1);
