@@ -50,6 +50,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+        headers={"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "*"}
+    )
+
+
 # === Initialize Whisper Model ===
 WHISPER_SIZE = os.getenv("WHISPER_SIZE", "small")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
@@ -402,7 +414,8 @@ async def full_pipeline(
     source_lang: str = Form("en"),
     target_lang: str = Form("hi"),
     session_id: str = Form("default"),
-    domain: str = Form("all")
+    domain: str = Form("all"),
+    capture_metadata: Optional[str] = Form(None)
 ):
     """
     Full End-to-End Pipeline with real latency benchmarks:
