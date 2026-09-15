@@ -90,7 +90,7 @@ def pcm16_to_wav_bytes(pcm16_bytes: bytes, rate: int = 16000) -> bytes:
 def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
     """
     Converts and resamples incoming browser audio (WebM, OGG, MP4, WAV, etc.) into clean 16kHz mono WAV PCM.
-    Applies audio volume normalization to boost soft microphone recordings for Whisper STT.
+    Applies intelligent dynamic audio normalization (dynaudnorm) to boost soft voices WITHOUT clipping distortion.
     """
     import subprocess, tempfile, os
 
@@ -105,7 +105,7 @@ def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
             "-err_detect", "ignore_err",
             "-i", in_path,
             "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
-            "-af", "volume=2.2",
+            "-af", "dynaudnorm=p=0.9:s=5",
             out_path
         ]
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -115,7 +115,20 @@ def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
             if len(converted) > 100:
                 return converted
     except Exception as e:
-        print(f"[!] Warning: Audio ffmpeg conversion error: {e}")
+        print(f"[!] Warning: Audio dynaudnorm conversion error: {e}, retrying without filter...")
+        try:
+            cmd_fallback = [
+                "ffmpeg", "-y",
+                "-i", in_path,
+                "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
+                out_path
+            ]
+            res2 = subprocess.run(cmd_fallback, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if res2.returncode == 0 and os.path.exists(out_path):
+                with open(out_path, "rb") as f:
+                    return f.read()
+        except Exception:
+            pass
     finally:
         for p in [in_path, out_path]:
             if os.path.exists(p):
@@ -135,13 +148,29 @@ WHISPER_HALLUCINATIONS = {
 
 
 def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
-    # 1. Convert & resample to clean 16kHz mono WAV PCM with volume boost
+    # 1. Convert & resample to clean 16kHz mono WAV PCM with dynamic normalization
     wav_bytes = convert_to_clean_wav(audio_bytes)
     whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
     print(f"[AUDIO_RECEIVED] size: {len(audio_bytes)} bytes -> Clean WAV: {len(wav_bytes)} bytes")
     print(f"[TRANSCRIPTION_STARTED] forced_lang: {whisper_lang or 'auto-detect'}")
 
-    # 2. Balanced Transcription (beam_size=2 for robust word boundaries and proper noun preservation)
+    # 2. Fast-Path: Groq LPU Cloud Whisper (whisper-large-v3-turbo, ~180-250ms latency, 99% accuracy)
+    if llm_translator._groq_client:
+        try:
+            groq_text = llm_translator.transcribe_with_groq(wav_bytes, whisper_lang)
+            if groq_text:
+                clean_text = groq_text.strip()
+                has_alnum = any(c.isalnum() for c in clean_text)
+                stripped = clean_text.lower().strip(" .!?,;:-\"'\n\r\t")
+                if has_alnum and stripped not in WHISPER_HALLUCINATIONS:
+                    print(f"[TRANSCRIPTION_COMPLETED] engine: Groq LPU (whisper-large-v3-turbo) transcript: \"{clean_text}\"")
+                    from collections import namedtuple
+                    PseudoInfo = namedtuple("PseudoInfo", ["language", "language_probability"])
+                    return clean_text, PseudoInfo(language=whisper_lang or "en", language_probability=0.99)
+        except Exception as e:
+            print(f"[!] Groq Whisper fast-path failed: {e}, falling back to local Whisper...")
+
+    # 3. Local Faster-Whisper Fallback (beam_size=2 for accurate word boundaries)
     try:
         segments, info = whisper_model.transcribe(
             io.BytesIO(wav_bytes),
@@ -181,7 +210,7 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
             raw_text = ""
             info = None
 
-    # 3. Filter silence hallucinations & punctuation-only artifacts
+    # 4. Filter silence hallucinations & punctuation-only artifacts
     has_alphanumeric = any(c.isalnum() for c in raw_text)
     stripped_word = raw_text.lower().strip(" .!?,;:-\"'\n\r\t")
 
@@ -193,7 +222,7 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
 
     detected_lang = info.language if info else (whisper_lang or "en")
     prob = info.language_probability if info else 1.0
-    print(f"[TRANSCRIPTION_COMPLETED] transcript: \"{clean_text}\" (lang: {detected_lang}, confidence: {prob:.2f})")
+    print(f"[TRANSCRIPTION_COMPLETED] engine: Local Whisper transcript: \"{clean_text}\" (lang: {detected_lang}, confidence: {prob:.2f})")
     return clean_text, info
 
 

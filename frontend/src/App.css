@@ -278,6 +278,38 @@
   border-color: var(--primary);
 }
 
+.engine-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px;
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle);
+}
+
+.engine-pill-btn {
+  background: transparent;
+  border: none;
+  border-radius: 16px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.engine-pill-btn:hover {
+  color: #fff;
+}
+
+.engine-pill-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
 /* Recording Row */
 .mic-input-row {
   display: flex;

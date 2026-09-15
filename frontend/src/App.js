@@ -63,6 +63,27 @@ function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
+
+  const isWebSpeechSupported = typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+  const [sttEngine, setSttEngine] = useState(isWebSpeechSupported ? 'browser' : 'whisper');
+
+  const getRecognitionLang = (code) => {
+    const base = (code || 'en').split('-')[0].toLowerCase();
+    const map = {
+      'en': 'en-US',
+      'hi': 'hi-IN',
+      'es': 'es-ES',
+      'fr': 'fr-FR',
+      'de': 'de-DE',
+      'zh': 'zh-CN',
+      'ja': 'ja-JP',
+      'ko': 'ko-KR',
+      'ru': 'ru-RU',
+      'ar': 'ar-SA',
+    };
+    return map[base] || 'en-US';
+  };
 
   // Check LLM status from backend on mount
   const checkBackendStatus = useCallback(async () => {
@@ -116,8 +137,56 @@ function App() {
     setTargetLang(prev);
   };
 
-  // Start Voice Recording
+  // Start Voice Recording (Dual Mode: Live Browser Recognition vs Cloud Whisper)
   const startRecording = async () => {
+    if (sttEngine === 'browser' && isWebSpeechSupported) {
+      try {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = getRecognitionLang(sourceLang);
+
+        let finalTranscript = '';
+        recognition.onresult = (event) => {
+          let interim = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript + ' ';
+            } else {
+              interim += event.results[i][0].transcript;
+            }
+          }
+          const text = (finalTranscript + interim).trim();
+          if (text) {
+            setTranscribedText(text);
+          }
+        };
+
+        recognition.onerror = (err) => {
+          console.warn('Browser speech recognition notice:', err.error);
+        };
+
+        recognition.onend = () => {
+          setRecording(false);
+        };
+
+        recognition.start();
+        speechRecognitionRef.current = recognition;
+        setRecording(true);
+        setRecordSeconds(0);
+        setCurrentStep(1);
+
+        timerRef.current = setInterval(() => {
+          setRecordSeconds((s) => s + 1);
+        }, 1000);
+        return;
+      } catch (err) {
+        console.warn('Web Speech API failed, falling back to MediaRecorder:', err);
+      }
+    }
+
+    // MediaRecorder path (Whisper audio upload)
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert('Your browser does not support audio recording.');
       return;
@@ -151,7 +220,6 @@ function App() {
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        // Stop stream tracks only AFTER MediaRecorder has finalized its buffers
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach((track) => track.stop());
         }
@@ -185,9 +253,22 @@ function App() {
   // Stop Recording
   const stopRecording = () => {
     if (timerRef.current) clearInterval(timerRef.current);
+
+    if (sttEngine === 'browser' && speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop();
+      } catch (e) {}
+      setRecording(false);
+      setCurrentStep(3);
+      // Auto-translate spoken text after settling
+      setTimeout(() => {
+        handleTranslateText();
+      }, 300);
+      return;
+    }
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
-        // Flush any remaining audio buffer before stopping to ensure short sentences are preserved
         mediaRecorderRef.current.requestData();
       } catch (e) {}
       mediaRecorderRef.current.stop();
@@ -490,8 +571,28 @@ function App() {
         {/* Upper Left: Speech & Transcript */}
         <div className="panel-card">
           <div className="panel-header">
-            <div className="panel-title">
+            <div className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span>🎤 Speech & Transcript</span>
+              {isWebSpeechSupported && (
+                <div className="engine-toggle-group">
+                  <button
+                    type="button"
+                    className={`engine-pill-btn ${sttEngine === 'browser' ? 'active' : ''}`}
+                    onClick={() => setSttEngine('browser')}
+                    title="Live Instant Browser Recognition (0s latency, native accent clarity)"
+                  >
+                    ⚡ Live Mic
+                  </button>
+                  <button
+                    type="button"
+                    className={`engine-pill-btn ${sttEngine === 'whisper' ? 'active' : ''}`}
+                    onClick={() => setSttEngine('whisper')}
+                    title="Neural Whisper Audio Transcription"
+                  >
+                    ☁️ Whisper AI
+                  </button>
+                </div>
+              )}
             </div>
             <div className="lang-selector-row">
               <select
@@ -535,10 +636,10 @@ function App() {
             )}
             <div className="record-status-text">
               {recording
-                ? `🎙️ Listening (${recordSeconds}s)... Click ⏹ to transcribe`
+                ? (sttEngine === 'browser' ? `🎙️ Listening live (${recordSeconds}s)... Speak naturally, click ⏹ when done` : `🎙️ Recording audio (${recordSeconds}s)... Click ⏹ to transcribe`)
                 : isProcessing
                   ? (currentStep === 2 ? '⏳ Transcribing audio (Whisper STT)...' : currentStep === 3 ? '🔍 Retrieving domain context (RAG)...' : currentStep === 4 ? '🌐 Translating transcript...' : '⚡ Processing...')
-                  : (translatedText ? '✅ Translation complete. Click mic or type to translate again.' : 'Click mic to speak, or type directly in the box below')}
+                  : (translatedText ? '✅ Translation complete. Click mic or type to translate again.' : (sttEngine === 'browser' ? '⚡ Click mic to speak with instant Live Recognition' : 'Click mic to speak, or type directly in the box below'))}
             </div>
           </div>
 

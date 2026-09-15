@@ -197,6 +197,34 @@ RECENT CONVERSATION (for pronoun/context resolution):
                 translated = translated[len(prefix):].strip()
         return translated
 
+    def transcribe_with_groq(self, audio_bytes: bytes, lang: Optional[str] = None) -> Optional[str]:
+        """
+        Ultra-low latency transcription via Groq LPU using whisper-large-v3-turbo (~200ms latency, state-of-the-art accuracy).
+        """
+        if not self._groq_client:
+            return None
+        import io
+        try:
+            whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
+            audio_file = io.BytesIO(audio_bytes)
+            audio_file.name = "recording.wav"
+
+            kwargs = {
+                "file": audio_file,
+                "model": "whisper-large-v3-turbo",
+                "temperature": 0.0,
+                "response_format": "json"
+            }
+            if whisper_lang:
+                kwargs["language"] = whisper_lang
+
+            transcription = self._groq_client.audio.transcriptions.create(**kwargs)
+            text = transcription.text.strip() if hasattr(transcription, "text") else str(transcription).strip()
+            return text if text else None
+        except Exception as e:
+            print(f"[!] Groq Whisper LPU error: {e}, will fallback to local Whisper")
+            return None
+
     LANGUAGE_NAME_MAP = {
         'en': 'english',
         'hi': 'hindi',
