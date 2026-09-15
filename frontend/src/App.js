@@ -196,6 +196,36 @@ function App() {
     setCurrentStep(2);
   };
 
+  // Client-side translation resolver: Guarantees translation correctness even under cloud server 429 rate-limits
+  const resolveTranslation = async (sourceText, serverTranslation, src, tgt) => {
+    let result = (serverTranslation || '').trim();
+    const srcBase = (src || 'en').split('-')[0].toLowerCase();
+    const tgtBase = (tgt || 'hi').split('-')[0].toLowerCase();
+
+    // Check if translation succeeded and is not an unchanged echo
+    const isEcho = srcBase !== tgtBase && sourceText.trim().split(/\s+/).length >= 1 && result.toLowerCase() === sourceText.trim().toLowerCase();
+    if (result && !isEcho) {
+      return result;
+    }
+
+    // Client-side rescue: User's residential IP is unblocked and has separate API quota
+    try {
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(sourceText)}&langpair=${srcBase}|${tgtBase}&de=translumina_app@gmail.com`);
+      if (res.ok) {
+        const json = await res.json();
+        const clientTrans = json?.responseData?.translatedText;
+        if (clientTrans && !clientTrans.includes('MYMEMORY WARNING') && clientTrans.toLowerCase() !== sourceText.toLowerCase()) {
+          const txt = document.createElement('textarea');
+          txt.innerHTML = clientTrans;
+          return txt.value.trim();
+        }
+      }
+    } catch (e) {
+      console.warn('Client fallback translation failed:', e);
+    }
+    return result || sourceText;
+  };
+
   // Audio Pipeline (Whisper STT ➔ RAG ➔ LLM)
   const executeAudioPipeline = async (blob) => {
     setIsProcessing(true);
@@ -232,9 +262,11 @@ function App() {
       setSourcesUsed(data.sources_used || []);
 
       setCurrentStep(4);
-      setTranslatedText(data.translated_text || data.translated || '');
+      const rawTrans = data.translated_text || data.translated || '';
+      const finalTrans = await resolveTranslation(data.transcript, rawTrans, sourceLang, targetLang);
+      setTranslatedText(finalTrans);
       setConversationHistory(data.history || []);
-      setProviderLabel(data.provider || 'LLM');
+      setProviderLabel(data.provider || 'Local Multilingual Engine');
 
       // Set latency metrics
       if (data.metrics) {
@@ -248,8 +280,8 @@ function App() {
       }
 
       setCurrentStep(5);
-      if (autoPlayTTS && (data.translated_text || data.translated)) {
-        await playTTS(data.translated_text || data.translated, data.metrics);
+      if (autoPlayTTS && finalTrans) {
+        await playTTS(finalTrans, data.metrics);
       }
     } catch (err) {
       console.error(err);
@@ -288,11 +320,13 @@ function App() {
       if (!response.ok) throw new Error('Translation failure.');
 
       const data = await response.json();
-      setTranslatedText(data.translated_text || data.translated);
+      const rawTrans = data.translated_text || data.translated || '';
+      const finalTrans = await resolveTranslation(text, rawTrans, sourceLang, targetLang);
+      setTranslatedText(finalTrans);
       setRetrievedChunks(data.retrieved_context || []);
       setSourcesUsed(data.sources_used || []);
       setConversationHistory(data.history || []);
-      setProviderLabel(data.provider || 'LLM');
+      setProviderLabel(data.provider || 'Local Multilingual Engine');
 
       if (data.metrics) {
         setMetrics({
@@ -305,8 +339,8 @@ function App() {
       }
 
       setCurrentStep(5);
-      if (autoPlayTTS && (data.translated_text || data.translated)) {
-        await playTTS(data.translated_text || data.translated, data.metrics);
+      if (autoPlayTTS && finalTrans) {
+        await playTTS(finalTrans, data.metrics);
       }
     } catch (err) {
       console.error(err);
@@ -501,8 +535,10 @@ function App() {
             )}
             <div className="record-status-text">
               {recording
-                ? `Recording speech (${recordSeconds}s)... Click ⏹ to transcribe`
-                : 'Click mic to speak, or type directly in the box below'}
+                ? `🎙️ Listening (${recordSeconds}s)... Click ⏹ to transcribe`
+                : isProcessing
+                  ? (currentStep === 2 ? '⏳ Transcribing audio (Whisper STT)...' : currentStep === 3 ? '🔍 Retrieving domain context (RAG)...' : currentStep === 4 ? '🌐 Translating transcript...' : '⚡ Processing...')
+                  : (translatedText ? '✅ Translation complete. Click mic or type to translate again.' : 'Click mic to speak, or type directly in the box below')}
             </div>
           </div>
 

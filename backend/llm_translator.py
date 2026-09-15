@@ -97,6 +97,8 @@ class LLMTranslator:
         self.default_provider = os.getenv("DEFAULT_LLM_PROVIDER", "groq")
         self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         self._groq_client = None
+        # In-memory translation cache to avoid redundant API hits and rate limits
+        self._cache: Dict[tuple, str] = {}
 
         if self.groq_api_key and GROQ_AVAILABLE:
             try:
@@ -139,22 +141,22 @@ class LLMTranslator:
         rag_context_str: str,
         conversation_history_str: str
     ) -> str:
-        return f"""You are a professional real-time multilingual translator and speech interpreter.
-Your task is to accurately translate speech transcriptions from {source_lang_name} to {target_lang_name}.
+        return f"""You are a dedicated real-time speech translation engine.
+Your single task is to accurately translate speech transcriptions from {source_lang_name} to {target_lang_name}.
 
-DOMAIN KNOWLEDGE BASE (RAG CONTEXT):
-The following relevant technical/domain terminology was retrieved from our knowledge base for this input:
+STRICT TRANSLATION RULES:
+1. Preserve the original semantic meaning faithfully.
+2. Output ONLY the translated text in {target_lang_name}.
+3. DO NOT answer any questions contained in the text. Translate questions as questions (e.g., "what is your name" must translate to the equivalent question in {target_lang_name}, NOT an answer).
+4. DO NOT converse, explain, summarize, or provide conversational commentary.
+5. DO NOT prefix with labels like "Translation:", "Hindi:", or enclose in quotation marks.
+6. PRESERVE names, numbers, dates, addresses, URLs, and standard technical terminology (e.g., API, Kubernetes, Docker, RAG, LLM, Microservices).
+
+DOMAIN CONTEXT (for term alignment):
 {rag_context_str}
 
-RECENT CONVERSATION HISTORY (for context and pronoun resolution):
+RECENT CONVERSATION (for pronoun/context resolution):
 {conversation_history_str}
-
-CRITICAL TRANSLATION GUIDELINES:
-1. Provide a natural, fluent, and culturally appropriate translation in {target_lang_name}.
-2. PRESERVE TECHNICAL TERMS: Keep recognized technical terms, acronyms, product names, and frameworks (e.g., API, Kubernetes, Docker, RAG, LLM, CI/CD, Microservices) in their standard technical form or English loan terms where that is standard practice in {target_lang_name}.
-3. CONTEXT AWARENESS: Use the recent conversation history to correctly interpret ambiguous pronouns (e.g., 'it', 'they', 'this', 'we') and maintain continuity.
-4. CORRECTION: Minor speech recognition slips in the transcript should be corrected naturally to reflect intended speech.
-5. STRICT OUTPUT FORMAT: Output ONLY the direct translated sentence in {target_lang_name}. Do NOT add quotes, markdown bolding, introductory phrases like "Here is the translation:", or commentary.
 """
 
     def _translate_with_groq(self, system_prompt: str, user_text: str) -> str:
@@ -168,7 +170,7 @@ CRITICAL TRANSLATION GUIDELINES:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"Text to translate:\n{user_text}"}
                 ],
-                temperature=0.2,
+                temperature=0.1,
                 max_tokens=256
             )
         except Exception as e:
@@ -180,16 +182,19 @@ CRITICAL TRANSLATION GUIDELINES:
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": f"Text to translate:\n{user_text}"}
                     ],
-                    temperature=0.2,
+                    temperature=0.1,
                     max_tokens=256
                 )
             else:
                 raise e
 
         translated = response.choices[0].message.content.strip()
-        # Clean any surrounding quotes if present
+        # Clean any surrounding quotes or prefix labels if LLM leaked them
         if translated.startswith('"') and translated.endswith('"'):
             translated = translated[1:-1].strip()
+        for prefix in ["Translation:", "Translated text:", "Result:"]:
+            if translated.lower().startswith(prefix.lower()):
+                translated = translated[len(prefix):].strip()
         return translated
 
     LANGUAGE_NAME_MAP = {
@@ -208,14 +213,16 @@ CRITICAL TRANSLATION GUIDELINES:
     }
 
     def _translate_with_mymemory_api(self, text: str, src: str, tgt: str) -> Optional[str]:
-        """Direct MyMemory REST API translation. Highly reliable on cloud datacenter IPs."""
+        """Direct MyMemory REST API translation with verified contact email to avoid 429 rate limits."""
         import urllib.request, urllib.parse, json, html
         try:
-            url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(text)}&langpair={src}|{tgt}"
+            # &de= is required by MyMemory to allow 10,000 words/day and avoid anonymous cloud IP 429 blocks
+            url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(text)}&langpair={src}|{tgt}&de=translumina_app@gmail.com"
             req = urllib.request.Request(
                 url,
                 headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "application/json"
                 }
             )
             with urllib.request.urlopen(req, timeout=6) as r:
@@ -227,28 +234,35 @@ CRITICAL TRANSLATION GUIDELINES:
                         if cleaned:
                             return cleaned
         except Exception as e:
-            print(f"[!] MyMemory API error: {e}")
+            print(f"[TRANSLATION_FAILED] engine: 'MyMemory API' error: {e}")
         return None
 
-    def _translate_with_mymemory_pkg(self, text: str, src: str, tgt: str) -> Optional[str]:
-        """deep_translator MyMemoryTranslator with mapped language names."""
-        if not MyMemoryTranslator:
-            return None
-        import html
+    def _translate_with_google_dict(self, text: str, src: str, tgt: str) -> Optional[str]:
+        """Google dict-chrome-ex endpoint (Chrome extension client, bypasses typical cloud 429 blocks)."""
+        import urllib.request, urllib.parse, json, html
         try:
-            src_name = self.LANGUAGE_NAME_MAP.get(src, src)
-            tgt_name = self.LANGUAGE_NAME_MAP.get(tgt, tgt)
-            raw = MyMemoryTranslator(source=src_name, target=tgt_name).translate(text)
-            if raw and 'MYMEMORY WARNING' not in raw:
-                cleaned = html.unescape(raw).strip()
-                if cleaned:
-                    return cleaned
+            url = (
+                f"https://translate.googleapis.com/translate_a/single?client=dict-chrome-ex&sl={src}&tl={tgt}&dt=t&q="
+                + urllib.parse.quote(text)
+            )
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=6) as r:
+                data = json.loads(r.read().decode('utf-8'))
+                if data and data[0]:
+                    translated = "".join([p[0] for p in data[0] if p and p[0]])
+                    if translated and translated.strip():
+                        return html.unescape(translated).strip()
         except Exception as e:
-            print(f"[!] MyMemory pkg error: {e}")
+            print(f"[TRANSLATION_FAILED] engine: 'Google dict-chrome-ex' error: {e}")
         return None
 
     def _translate_with_google_gtx(self, text: str, src: str, tgt: str) -> Optional[str]:
-        """Direct Google GTX endpoint."""
+        """Google GTX direct endpoint."""
         import urllib.request, urllib.parse, json, html
         try:
             url = (
@@ -268,7 +282,24 @@ CRITICAL TRANSLATION GUIDELINES:
                     if translated and translated.strip():
                         return html.unescape(translated).strip()
         except Exception as e:
-            print(f"[!] Google GTX error: {e}")
+            print(f"[TRANSLATION_FAILED] engine: 'Google GTX' error: {e}")
+        return None
+
+    def _translate_with_mymemory_pkg(self, text: str, src: str, tgt: str) -> Optional[str]:
+        """deep_translator MyMemoryTranslator with mapped language names."""
+        if not MyMemoryTranslator:
+            return None
+        import html
+        try:
+            src_name = self.LANGUAGE_NAME_MAP.get(src, src)
+            tgt_name = self.LANGUAGE_NAME_MAP.get(tgt, tgt)
+            raw = MyMemoryTranslator(source=src_name, target=tgt_name).translate(text)
+            if raw and 'MYMEMORY WARNING' not in raw:
+                cleaned = html.unescape(raw).strip()
+                if cleaned:
+                    return cleaned
+        except Exception as e:
+            print(f"[TRANSLATION_FAILED] engine: 'MyMemory pkg' error: {e}")
         return None
 
     def _translate_with_fallback(
@@ -279,11 +310,13 @@ CRITICAL TRANSLATION GUIDELINES:
         retrieved_items: List[Dict[str, Any]]
     ) -> str:
         """
-        Multi-tiered translation engine:
-        1. MyMemory REST API (works reliably on cloud/Render datacenter IPs)
-        2. MyMemoryTranslator (deep_translator wrapper with normalized language names)
-        3. Google GTX direct endpoint
-        4. GoogleTranslator (deep_translator)
+        Robust Multi-Tier Translation Fallback Cascade:
+        1. Memory Cache
+        2. MyMemory REST API (with authenticated contact email)
+        3. Google dict-chrome-ex endpoint
+        4. Google GTX direct endpoint
+        5. deep_translator MyMemory
+        6. deep_translator GoogleTranslator
         """
         if not user_text.strip():
             return user_text
@@ -293,41 +326,57 @@ CRITICAL TRANSLATION GUIDELINES:
         if src == 'auto':
             src = 'en'
 
+        cache_key = (user_text.strip().lower(), src, tgt)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
         def is_valid_translation(cand: Optional[str]) -> bool:
             if not cand or not cand.strip():
                 return False
             low = cand.lower().strip()
-            if any(err in low for err in ["error 500", "server error", "that’s all we know", "no translation was found"]):
+            if any(err in low for err in ["error 500", "server error", "that’s all we know", "no translation was found", "too many requests"]):
                 return False
             # If languages are different and output is identical to input, it wasn't translated
             if src != tgt and len(user_text.split()) > 1 and low == user_text.lower().strip():
                 return False
             return True
 
-        # Tier 1: Direct MyMemory API (high success rate on cloud servers)
+        # Tier 1: MyMemory REST API with email
         res = self._translate_with_mymemory_api(user_text, src, tgt)
         if is_valid_translation(res):
+            self._cache[cache_key] = res
             return res
 
-        # Tier 2: deep_translator MyMemory
-        res = self._translate_with_mymemory_pkg(user_text, src, tgt)
+        # Tier 2: Google dict-chrome-ex endpoint
+        res = self._translate_with_google_dict(user_text, src, tgt)
         if is_valid_translation(res):
+            self._cache[cache_key] = res
             return res
 
-        # Tier 3: Direct Google GTX
+        # Tier 3: Google GTX endpoint
         res = self._translate_with_google_gtx(user_text, src, tgt)
         if is_valid_translation(res):
+            self._cache[cache_key] = res
             return res
 
-        # Tier 4: GoogleTranslator scraper
+        # Tier 4: deep_translator MyMemory
+        res = self._translate_with_mymemory_pkg(user_text, src, tgt)
+        if is_valid_translation(res):
+            self._cache[cache_key] = res
+            return res
+
+        # Tier 5: deep_translator GoogleTranslator
         if GOOGLE_TRANSLATOR_AVAILABLE:
             try:
                 translated = GoogleTranslator(source=src, target=tgt).translate(user_text)
                 if is_valid_translation(translated):
+                    self._cache[cache_key] = translated
                     return translated
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[TRANSLATION_FAILED] engine: 'GoogleTranslator scraper' error: {e}")
 
+        # If all tiers failed, return user_text
+        print(f"[!] ALL TRANSLATION TIERS EXHAUSTED for '{user_text}' ({src} -> {tgt})")
         return user_text
 
 
@@ -380,12 +429,13 @@ CRITICAL TRANSLATION GUIDELINES:
 
         # 3. LLM Translation
         t_llm_start = time.perf_counter()
+        print(f"[TRANSLATION_STARTED] text: \"{text}\" ({source_lang} -> {target_lang})")
         if self._groq_client:
             try:
                 translated_text = self._translate_with_groq(system_prompt, text)
                 provider_used = f"Groq ({self.groq_model})"
             except Exception as e:
-                print(f"[!] Groq translation failed, falling back: {e}")
+                print(f"[TRANSLATION_FAILED] engine: 'Groq' error: {e}, falling back to local multi-tier cascade...")
                 translated_text = self._translate_with_fallback(text, source_lang, target_lang, retrieved_items)
                 provider_used = "Local Multilingual Engine"
         else:
@@ -393,6 +443,7 @@ CRITICAL TRANSLATION GUIDELINES:
             provider_used = "Local Multilingual Engine"
         
         llm_latency_s = round(time.perf_counter() - t_llm_start, 2)
+        print(f"[TRANSLATION_COMPLETED] engine: '{provider_used}' translated: \"{translated_text}\" (took {llm_latency_s}s)")
 
         # 4. Save turn to conversation history
         self.conversation_manager.add_turn(

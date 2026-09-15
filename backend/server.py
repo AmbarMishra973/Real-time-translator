@@ -137,46 +137,51 @@ WHISPER_HALLUCINATIONS = {
 def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
     # 1. Convert & resample to clean 16kHz mono WAV PCM with volume boost
     wav_bytes = convert_to_clean_wav(audio_bytes)
-    print(f"[Mic Audio] Received {len(audio_bytes)} bytes -> Clean WAV: {len(wav_bytes)} bytes")
-
     whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
+    print(f"[AUDIO_RECEIVED] size: {len(audio_bytes)} bytes -> Clean WAV: {len(wav_bytes)} bytes")
+    print(f"[TRANSCRIPTION_STARTED] forced_lang: {whisper_lang or 'auto-detect'}")
 
-    # 2. Fast Greedy Transcription with tuned VAD (beam_size=1, temperature=0.0 for speed and no hallucinations)
+    # 2. Balanced Transcription (beam_size=2 for robust word boundaries and proper noun preservation)
     try:
         segments, info = whisper_model.transcribe(
             io.BytesIO(wav_bytes),
             language=whisper_lang,
-            beam_size=1,
-            best_of=1,
+            beam_size=2,
+            best_of=2,
             temperature=0.0,
             no_speech_threshold=0.6,
             condition_on_previous_text=False,
             vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=250, speech_pad_ms=200, threshold=0.35)
+            vad_parameters=dict(min_silence_duration_ms=450, speech_pad_ms=250, threshold=0.35)
         )
         text_parts = [seg.text for seg in segments]
         raw_text = ' '.join(text_parts).strip()
     except Exception as e:
-        print(f"[!] VAD Transcribe Error: {e}, falling back to non-VAD mode...")
+        print(f"[TRANSCRIPTION_FAILED] VAD transcribe error: {e}, attempting non-VAD fallback...")
         raw_text = ""
         info = None
 
     # Fallback to non-VAD mode if VAD filter suppressed quiet/short speech
     if not raw_text:
-        segments, info = whisper_model.transcribe(
-            io.BytesIO(wav_bytes),
-            language=whisper_lang,
-            beam_size=1,
-            best_of=1,
-            temperature=0.0,
-            no_speech_threshold=0.6,
-            condition_on_previous_text=False,
-            vad_filter=False
-        )
-        text_parts = [seg.text for seg in segments]
-        raw_text = ' '.join(text_parts).strip()
+        try:
+            segments, info = whisper_model.transcribe(
+                io.BytesIO(wav_bytes),
+                language=whisper_lang,
+                beam_size=2,
+                best_of=2,
+                temperature=0.0,
+                no_speech_threshold=0.6,
+                condition_on_previous_text=False,
+                vad_filter=False
+            )
+            text_parts = [seg.text for seg in segments]
+            raw_text = ' '.join(text_parts).strip()
+        except Exception as e:
+            print(f"[TRANSCRIPTION_FAILED] Non-VAD fallback error: {e}")
+            raw_text = ""
+            info = None
 
-    # 3. Filter silence hallucinations & punctuation-only artifacts (must contain at least one alphanumeric character)
+    # 3. Filter silence hallucinations & punctuation-only artifacts
     has_alphanumeric = any(c.isalnum() for c in raw_text)
     stripped_word = raw_text.lower().strip(" .!?,;:-\"'\n\r\t")
 
@@ -186,9 +191,9 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
     else:
         clean_text = raw_text.strip()
 
-    detected_lang = info.language if info else "en"
+    detected_lang = info.language if info else (whisper_lang or "en")
     prob = info.language_probability if info else 1.0
-    print(f"[Whisper STT] Heard ({detected_lang} {prob:.2f}): \"{clean_text}\"")
+    print(f"[TRANSCRIPTION_COMPLETED] transcript: \"{clean_text}\" (lang: {detected_lang}, confidence: {prob:.2f})")
     return clean_text, info
 
 
