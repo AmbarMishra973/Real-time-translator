@@ -3,7 +3,7 @@ FROM python:3.11-slim
 # Prevent Python from writing .pyc files & buffer output
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    WHISPER_SIZE=base \
+    WHISPER_SIZE=small \
     WHISPER_DEVICE=cpu
 
 WORKDIR /app

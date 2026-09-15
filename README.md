@@ -43,9 +43,13 @@ An end-to-end Speech-to-Speech translation pipeline combining **Faster-Whisper S
 ## Technical Architecture & Core System Design
 
 ### 1. Speech-to-Text (STT) Layer
-- Powered by `faster-whisper` (`small`/`base` model using `int8` quantization on CPU).
-- Automatic WebM/Opus to 16kHz mono WAV conversion with audio gain normalization (`-af "volume=1.8"`) to boost soft microphone recordings.
-- Dual-pass Silero VAD filtering and hallucination suppression to filter out silent artifacts.
+- Powered by `faster-whisper` (`small` by default, `int8` quantization on CPU) with an optional Groq Whisper fast path.
+- Automatic WebM/Opus to 16kHz mono 16-bit WAV conversion, followed by sample-rate/channel/duration/signal validation before STT. Audio normalization is disabled by default and can be measured explicitly with `STT_NORMALIZE_AUDIO=true`.
+- Dual-pass VAD fallback and hallucination filtering are used only after valid audio has been established.
+
+### STT diagnostics
+
+Each utterance emits a structured, non-sensitive log record with its ID, format, duration, signal level, STT engine, and latency. Set `STT_DEBUG=true` only while diagnosing a local issue to include transcript text in logs. To retain decoded WAV files for a controlled local test, set both `STT_DEBUG_SAVE_AUDIO=true` and `STT_DEBUG_AUDIO_DIR` to a dedicated directory; this is intentionally off by default because recordings can contain sensitive data.
 
 ### 2. Retrieval-Augmented Generation (RAG) Engine
 - Domain-specific glossaries (`technical_terms.txt`, `business_terms.txt`, `medical_terms.txt`) indexed into an in-memory vector store.

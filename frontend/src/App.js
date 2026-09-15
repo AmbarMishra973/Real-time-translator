@@ -34,6 +34,7 @@ function App() {
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [sttNotice, setSttNotice] = useState('');
 
   // Content
   const [transcribedText, setTranscribedText] = useState('');
@@ -64,9 +65,14 @@ function App() {
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
   const speechRecognitionRef = useRef(null);
+  const browserFinalTranscriptRef = useRef('');
+  const browserRecognitionErrorRef = useRef(null);
+  const browserStopRequestedRef = useRef(false);
+  const activeResultRequestIdRef = useRef(0);
 
   const isWebSpeechSupported = typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
-  const [sttEngine, setSttEngine] = useState(isWebSpeechSupported ? 'browser' : 'whisper');
+  // Whisper is the deterministic default. Browser recognition is an explicit opt-in service.
+  const [sttEngine, setSttEngine] = useState('whisper');
 
   const getRecognitionLang = (code) => {
     const base = (code || 'en').split('-')[0].toLowerCase();
@@ -139,6 +145,17 @@ function App() {
 
   // Start Voice Recording (Dual Mode: Live Browser Recognition vs Cloud Whisper)
   const startRecording = async () => {
+    setSttNotice('');
+    setTranscribedText('');
+    setTranslatedText('');
+    setRetrievedChunks([]);
+    setSourcesUsed([]);
+    setProviderLabel('');
+    setMetrics({ stt_s: null, rag_s: null, llm_s: null, tts_s: null, total_s: null });
+    browserFinalTranscriptRef.current = '';
+    browserRecognitionErrorRef.current = null;
+    browserStopRequestedRef.current = false;
+
     if (sttEngine === 'browser' && isWebSpeechSupported) {
       try {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -147,17 +164,16 @@ function App() {
         recognition.interimResults = true;
         recognition.lang = getRecognitionLang(sourceLang);
 
-        let finalTranscript = '';
         recognition.onresult = (event) => {
           let interim = '';
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript + ' ';
+              browserFinalTranscriptRef.current += event.results[i][0].transcript + ' ';
             } else {
               interim += event.results[i][0].transcript;
             }
           }
-          const text = (finalTranscript + interim).trim();
+          const text = (browserFinalTranscriptRef.current + interim).trim();
           if (text) {
             setTranscribedText(text);
           }
@@ -165,10 +181,23 @@ function App() {
 
         recognition.onerror = (err) => {
           console.warn('Browser speech recognition notice:', err.error);
+          browserRecognitionErrorRef.current = err.error || 'unknown recognition error';
+          setSttNotice(`Live Mic could not transcribe this recording: ${browserRecognitionErrorRef.current}.`);
         };
 
         recognition.onend = () => {
+          if (timerRef.current) clearInterval(timerRef.current);
+          speechRecognitionRef.current = null;
           setRecording(false);
+          if (!browserStopRequestedRef.current || browserRecognitionErrorRef.current) return;
+
+          const finalText = browserFinalTranscriptRef.current.trim();
+          if (!finalText) {
+            setSttNotice('No finalized speech was detected. Nothing was sent to translation.');
+            return;
+          }
+          setTranscribedText(finalText);
+          translateText(finalText);
         };
 
         recognition.start();
@@ -183,6 +212,7 @@ function App() {
         return;
       } catch (err) {
         console.warn('Web Speech API failed, falling back to MediaRecorder:', err);
+        setSttNotice('Live Mic could not start; switching to Whisper AI recording.');
       }
     }
 
@@ -246,6 +276,7 @@ function App() {
         setRecordSeconds((s) => s + 1);
       }, 1000);
     } catch (err) {
+      setSttNotice('Microphone error: ' + err.message);
       alert('Microphone error: ' + err.message);
     }
   };
@@ -255,15 +286,12 @@ function App() {
     if (timerRef.current) clearInterval(timerRef.current);
 
     if (sttEngine === 'browser' && speechRecognitionRef.current) {
+      browserStopRequestedRef.current = true;
       try {
         speechRecognitionRef.current.stop();
       } catch (e) {}
       setRecording(false);
-      setCurrentStep(3);
-      // Auto-translate spoken text after settling
-      setTimeout(() => {
-        handleTranslateText();
-      }, 300);
+      setCurrentStep(2);
       return;
     }
 
@@ -309,6 +337,7 @@ function App() {
 
   // Audio Pipeline (Whisper STT ➔ RAG ➔ LLM)
   const executeAudioPipeline = async (blob) => {
+    const requestId = ++activeResultRequestIdRef.current;
     setIsProcessing(true);
     setCurrentStep(2);
 
@@ -328,6 +357,7 @@ function App() {
       if (!response.ok) throw new Error(`Backend server responded with error ${response.status}`);
 
       const data = await response.json();
+      if (requestId !== activeResultRequestIdRef.current) return;
       
       // Strict validation: Must contain actual alphanumeric words (not dots or empty punctuation)
       const hasSpokenContent = data.transcript && /[a-zA-Z0-9\u0900-\u097F\u4e00-\u9fa5\u0600-\u06FF]/.test(data.transcript);
@@ -365,6 +395,7 @@ function App() {
         await playTTS(finalTrans, data.metrics);
       }
     } catch (err) {
+      if (requestId !== activeResultRequestIdRef.current) return;
       console.error(err);
       if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
         alert('Could not connect to backend server.\n\nIf using Render free tier, the backend may be waking up from sleep mode (takes ~30-45 seconds). Please wait a moment and try speaking again!');
@@ -372,15 +403,16 @@ function App() {
         alert('Audio processing error: ' + err.message);
       }
     } finally {
-      setIsProcessing(false);
+      if (requestId === activeResultRequestIdRef.current) setIsProcessing(false);
     }
   };
 
   // Direct Text Translation with RAG
-  const handleTranslateText = async () => {
-    const text = transcribedText.trim();
+  const translateText = async (rawText) => {
+    const text = rawText.trim();
     if (!text || !/[a-zA-Z0-9\u0900-\u097F\u4e00-\u9fa5\u0600-\u06FF]/.test(text)) return;
 
+    const requestId = ++activeResultRequestIdRef.current;
     setIsProcessing(true);
     setCurrentStep(3);
 
@@ -401,6 +433,7 @@ function App() {
       if (!response.ok) throw new Error('Translation failure.');
 
       const data = await response.json();
+      if (requestId !== activeResultRequestIdRef.current) return;
       const rawTrans = data.translated_text || data.translated || '';
       const finalTrans = await resolveTranslation(text, rawTrans, sourceLang, targetLang);
       setTranslatedText(finalTrans);
@@ -424,11 +457,14 @@ function App() {
         await playTTS(finalTrans, data.metrics);
       }
     } catch (err) {
+      if (requestId !== activeResultRequestIdRef.current) return;
       console.error(err);
     } finally {
-      setIsProcessing(false);
+      if (requestId === activeResultRequestIdRef.current) setIsProcessing(false);
     }
   };
+
+  const handleTranslateText = async () => translateText(transcribedText);
 
   // Play Neural TTS Audio & Measure Latency
   const playTTS = async (textOverride, baseMetrics) => {
@@ -579,6 +615,7 @@ function App() {
                     type="button"
                     className={`engine-pill-btn ${sttEngine === 'browser' ? 'active' : ''}`}
                     onClick={() => setSttEngine('browser')}
+                    disabled={recording || isProcessing}
                     title="Live Instant Browser Recognition (0s latency, native accent clarity)"
                   >
                     ⚡ Live Mic
@@ -587,6 +624,7 @@ function App() {
                     type="button"
                     className={`engine-pill-btn ${sttEngine === 'whisper' ? 'active' : ''}`}
                     onClick={() => setSttEngine('whisper')}
+                    disabled={recording || isProcessing}
                     title="Neural Whisper Audio Transcription"
                   >
                     ☁️ Whisper AI
@@ -639,7 +677,7 @@ function App() {
                 ? (sttEngine === 'browser' ? `🎙️ Listening live (${recordSeconds}s)... Speak naturally, click ⏹ when done` : `🎙️ Recording audio (${recordSeconds}s)... Click ⏹ to transcribe`)
                 : isProcessing
                   ? (currentStep === 2 ? '⏳ Transcribing audio (Whisper STT)...' : currentStep === 3 ? '🔍 Retrieving domain context (RAG)...' : currentStep === 4 ? '🌐 Translating transcript...' : '⚡ Processing...')
-                  : (translatedText ? '✅ Translation complete. Click mic or type to translate again.' : (sttEngine === 'browser' ? '⚡ Click mic to speak with instant Live Recognition' : 'Click mic to speak, or type directly in the box below'))}
+                  : (sttNotice || (translatedText ? '✅ Translation complete. Click mic or type to translate again.' : (sttEngine === 'browser' ? '⚡ Click mic to speak with Live Recognition' : 'Click mic to record with Whisper AI, or type directly in the box below')))}
             </div>
           </div>
 

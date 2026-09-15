@@ -12,6 +12,10 @@ import os
 import io
 import sys
 import asyncio
+import json
+import time
+import uuid
+from pathlib import Path
 
 # Ensure safe console output on Windows
 if sys.platform == "win32":
@@ -30,6 +34,7 @@ import edge_tts
 
 from backend.rag_engine import rag_engine
 from backend.llm_translator import llm_translator
+from backend.audio_diagnostics import inspect_pcm16_wav, upload_suffix, validate_normalized_audio
 
 app = FastAPI(
     title="Real-Time AI Translator + RAG API",
@@ -46,15 +51,23 @@ app.add_middleware(
 )
 
 # === Initialize Whisper Model ===
-WHISPER_SIZE = os.getenv("WHISPER_SIZE", "base")
+WHISPER_SIZE = os.getenv("WHISPER_SIZE", "small")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
+WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 print(f"[*] Initializing Faster-Whisper ({WHISPER_SIZE} on {WHISPER_DEVICE})...")
+whisper_model = None
 try:
-    whisper_model = WhisperModel(WHISPER_SIZE, device=WHISPER_DEVICE, compute_type="int8")
+    whisper_model = WhisperModel(WHISPER_SIZE, device=WHISPER_DEVICE, compute_type=WHISPER_COMPUTE_TYPE)
     print("[+] Whisper model loaded successfully.")
 except Exception as e:
-    print(f"[!] Warning: Could not load {WHISPER_SIZE} model ({e}). Attempting 'base' fallback...")
-    whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+    print(f"[!] Warning: Could not load {WHISPER_SIZE} model ({e}).")
+    if WHISPER_SIZE != "base":
+        try:
+            print("[*] Attempting cached base-model fallback...")
+            whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+            print("[+] Base fallback model loaded successfully.")
+        except Exception as fallback_error:
+            print(f"[!] Local Whisper is unavailable: {fallback_error}")
 
 # High-quality neural voices mapping
 VOICE_MAP = {
@@ -87,14 +100,35 @@ def pcm16_to_wav_bytes(pcm16_bytes: bytes, rate: int = 16000) -> bytes:
     return buf.getvalue()
 
 
-def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
+def stt_log(event: str, utterance_id: str, **fields) -> None:
+    """Emit structured, non-sensitive STT diagnostics; transcript text requires STT_DEBUG=true."""
+    payload = {"event": event, "utterance_id": utterance_id, **fields}
+    print("[STT] " + json.dumps(payload, ensure_ascii=False, default=str), flush=True)
+
+
+def save_debug_audio(wav_bytes: bytes, utterance_id: str) -> None:
+    """Persist decoded audio only after an explicit, local debug opt-in."""
+    if os.getenv("STT_DEBUG_SAVE_AUDIO", "false").lower() != "true":
+        return
+    directory = os.getenv("STT_DEBUG_AUDIO_DIR", "").strip()
+    if not directory:
+        stt_log("debug_audio_skipped", utterance_id, reason="STT_DEBUG_AUDIO_DIR is not configured")
+        return
+    output_dir = Path(directory).expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"{utterance_id}.wav"
+    output_path.write_bytes(wav_bytes)
+    stt_log("debug_audio_saved", utterance_id, path=str(output_path))
+
+
+def convert_to_clean_wav(audio_bytes: bytes, suffix: str = ".bin") -> bytes:
     """
     Converts and resamples incoming browser audio (WebM, OGG, MP4, WAV, etc.) into clean 16kHz mono WAV PCM.
-    Applies intelligent dynamic audio normalization (dynaudnorm) to boost soft voices WITHOUT clipping distortion.
+    Normalization is opt-in because its benefit must be measured per microphone.
     """
     import subprocess, tempfile, os
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".input_audio") as in_f:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as in_f:
         in_f.write(audio_bytes)
         in_path = in_f.name
 
@@ -105,9 +139,10 @@ def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
             "-err_detect", "ignore_err",
             "-i", in_path,
             "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
-            "-af", "dynaudnorm=p=0.9:s=5",
-            out_path
         ]
+        if os.getenv("STT_NORMALIZE_AUDIO", "false").lower() == "true":
+            cmd.extend(["-af", "dynaudnorm=p=0.9:s=5"])
+        cmd.append(out_path)
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if res.returncode == 0 and os.path.exists(out_path):
             with open(out_path, "rb") as f:
@@ -115,7 +150,7 @@ def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
             if len(converted) > 100:
                 return converted
     except Exception as e:
-        print(f"[!] Warning: Audio dynaudnorm conversion error: {e}, retrying without filter...")
+        print(f"[!] Warning: Audio conversion error: {e}")
         try:
             cmd_fallback = [
                 "ffmpeg", "-y",
@@ -135,7 +170,7 @@ def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
                 try: os.remove(p)
                 except Exception: pass
 
-    return audio_bytes
+    raise ValueError("Audio conversion failed; verify that FFmpeg supports the uploaded audio format.")
 
 
 WHISPER_HALLUCINATIONS = {
@@ -147,12 +182,21 @@ WHISPER_HALLUCINATIONS = {
 }
 
 
-def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
-    # 1. Convert & resample to clean 16kHz mono WAV PCM with dynamic normalization
-    wav_bytes = convert_to_clean_wav(audio_bytes)
+def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Optional[str] = None, content_type: Optional[str] = None):
+    utterance_id = uuid.uuid4().hex[:12]
+    stt_started_at = time.perf_counter()
+    # 1. Convert and validate one complete utterance before it reaches an STT engine.
+    wav_bytes = convert_to_clean_wav(audio_bytes, upload_suffix(filename, content_type))
+    diagnostics = inspect_pcm16_wav(wav_bytes)
+    validate_normalized_audio(diagnostics)
     whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
-    print(f"[AUDIO_RECEIVED] size: {len(audio_bytes)} bytes -> Clean WAV: {len(wav_bytes)} bytes")
-    print(f"[TRANSCRIPTION_STARTED] forced_lang: {whisper_lang or 'auto-detect'}")
+    stt_log("audio_validated", utterance_id, input_bytes=len(audio_bytes), normalized_bytes=len(wav_bytes), source_language=whisper_lang or "auto", **diagnostics)
+    save_debug_audio(wav_bytes, utterance_id)
+    if diagnostics["is_silent"]:
+        from types import SimpleNamespace
+        stt_log("no_speech", utterance_id, reason="signal_below_threshold", stt_latency_s=round(time.perf_counter() - stt_started_at, 3))
+        return "", SimpleNamespace(language=whisper_lang, language_probability=None, language_source="selected" if whisper_lang else "unknown"), diagnostics
+    stt_log("transcription_started", utterance_id, engine="groq" if llm_translator._groq_client else "local", source_language=whisper_lang or "auto")
 
     # 2. Fast-Path: Groq LPU Cloud Whisper (whisper-large-v3-turbo, ~180-250ms latency, 99% accuracy)
     if llm_translator._groq_client:
@@ -163,20 +207,21 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
                 has_alnum = any(c.isalnum() for c in clean_text)
                 stripped = clean_text.lower().strip(" .!?,;:-\"'\n\r\t")
                 if has_alnum and stripped not in WHISPER_HALLUCINATIONS:
-                    print(f"[TRANSCRIPTION_COMPLETED] engine: Groq LPU (whisper-large-v3-turbo) transcript: \"{clean_text}\"")
-                    from collections import namedtuple
-                    PseudoInfo = namedtuple("PseudoInfo", ["language", "language_probability"])
-                    return clean_text, PseudoInfo(language=whisper_lang or "en", language_probability=0.99)
+                    from types import SimpleNamespace
+                    stt_log("transcription_completed", utterance_id, engine="groq", stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text if os.getenv("STT_DEBUG", "false").lower() == "true" else None)
+                    return clean_text, SimpleNamespace(language=whisper_lang, language_probability=None, language_source="selected" if whisper_lang else "unknown"), diagnostics
         except Exception as e:
             print(f"[!] Groq Whisper fast-path failed: {e}, falling back to local Whisper...")
 
-    # 3. Local Faster-Whisper Fallback (beam_size=2 for accurate word boundaries)
+    if whisper_model is None:
+        raise RuntimeError("No STT engine is available. Configure Groq or install/cache the configured Faster-Whisper model.")
+
+    # 3. Local accuracy-first fallback. Keep parameters configurable for measured tuning.
     try:
         segments, info = whisper_model.transcribe(
             io.BytesIO(wav_bytes),
             language=whisper_lang,
-            beam_size=2,
-            best_of=2,
+            beam_size=int(os.getenv("WHISPER_BEAM_SIZE", "5")),
             temperature=0.0,
             no_speech_threshold=0.6,
             condition_on_previous_text=False,
@@ -196,8 +241,7 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
             segments, info = whisper_model.transcribe(
                 io.BytesIO(wav_bytes),
                 language=whisper_lang,
-                beam_size=2,
-                best_of=2,
+                beam_size=int(os.getenv("WHISPER_BEAM_SIZE", "5")),
                 temperature=0.0,
                 no_speech_threshold=0.6,
                 condition_on_previous_text=False,
@@ -215,15 +259,18 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
     stripped_word = raw_text.lower().strip(" .!?,;:-\"'\n\r\t")
 
     if not has_alphanumeric or stripped_word in WHISPER_HALLUCINATIONS:
-        print(f"[-] Discarded silence / punctuation hallucination: '{raw_text}'")
+        stt_log("no_speech", utterance_id, reason="empty_or_hallucination", stt_latency_s=round(time.perf_counter() - stt_started_at, 3))
         clean_text = ""
     else:
         clean_text = raw_text.strip()
 
-    detected_lang = info.language if info else (whisper_lang or "en")
-    prob = info.language_probability if info else 1.0
-    print(f"[TRANSCRIPTION_COMPLETED] engine: Local Whisper transcript: \"{clean_text}\" (lang: {detected_lang}, confidence: {prob:.2f})")
-    return clean_text, info
+    if info is None:
+        from types import SimpleNamespace
+        info = SimpleNamespace(language=whisper_lang, language_probability=None, language_source="selected" if whisper_lang else "unknown")
+    detected_lang = info.language if info.language else (whisper_lang or "en")
+    prob = info.language_probability
+    stt_log("transcription_completed", utterance_id, engine="local", detected_language=detected_lang, confidence=prob, stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text if os.getenv("STT_DEBUG", "false").lower() == "true" else None)
+    return clean_text, info, diagnostics
 
 
 # === API Endpoints ===
@@ -242,6 +289,7 @@ def root():
         "version": "2.0.1",
         "status": "online",
         "llm_status": llm_translator.get_status(),
+        "stt_status": {"local_model_loaded": whisper_model is not None, "requested_model": WHISPER_SIZE},
         "rag_domains": rag_engine.get_domains(),
         "total_knowledge_terms": len(rag_engine.chunks)
     }
@@ -257,11 +305,18 @@ async def transcribe_audio(
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Empty audio file received.")
 
-    text, info = await asyncio.to_thread(sync_transcribe, audio_bytes, lang)
+    try:
+        text, info, diagnostics = await asyncio.to_thread(sync_transcribe, audio_bytes, lang, file.filename, file.content_type)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     return {
         "text": text,
         "detected_lang": info.language,
-        "confidence": round(info.language_probability, 3)
+        "confidence": round(info.language_probability, 3) if info.language_probability is not None else None,
+        "language_source": getattr(info, "language_source", "detected"),
+        "audio": diagnostics if os.getenv("STT_DEBUG", "false").lower() == "true" else None,
     }
 
 
@@ -357,7 +412,12 @@ async def full_pipeline(
 
     # 1. STT Timing
     t_stt_start = time.perf_counter()
-    transcript, info = await asyncio.to_thread(sync_transcribe, audio_bytes, source_lang)
+    try:
+        transcript, info, diagnostics = await asyncio.to_thread(sync_transcribe, audio_bytes, source_lang, file.filename, file.content_type)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     t_stt = time.perf_counter() - t_stt_start
 
     if not transcript or not any(c.isalnum() for c in transcript):
@@ -374,7 +434,8 @@ async def full_pipeline(
                 "llm_s": 0.0,
                 "total_s": round(t_stt, 2)
             },
-            "message": "No speech detected in audio."
+            "message": "No speech detected in audio.",
+            "audio": diagnostics if os.getenv("STT_DEBUG", "false").lower() == "true" else None,
         }
 
     # 2. RAG Timing
@@ -400,6 +461,7 @@ async def full_pipeline(
     return {
         "transcript": transcript,
         "detected_lang": info.language,
+        "language_source": getattr(info, "language_source", "detected"),
         "translated_text": trans_result["translated_text"],
         "translated": trans_result["translated_text"],
         "retrieved_context": trans_result["retrieved_context"],
@@ -411,7 +473,8 @@ async def full_pipeline(
             "rag_s": round(t_rag, 3),
             "llm_s": round(t_llm, 2),
             "total_s": round(t_total, 2)
-        }
+        },
+        "audio": diagnostics if os.getenv("STT_DEBUG", "false").lower() == "true" else None,
     }
 
 
@@ -500,6 +563,12 @@ def clear_history(session_id: str = "default"):
 
 @app.websocket("/ws/transcribe")
 async def websocket_transcribe(websocket: WebSocket):
+    if os.getenv("ENABLE_EXPERIMENTAL_WEBSOCKET", "false").lower() != "true":
+        await websocket.close(code=1008, reason="Experimental streaming STT is disabled; use /pipeline.")
+        return
+    if whisper_model is None:
+        await websocket.close(code=1011, reason="No local Whisper model is available.")
+        return
     await websocket.accept()
     buffer = bytearray()
     print("\n[+] Microphone connected via WebSocket.")
