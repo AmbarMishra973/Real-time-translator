@@ -192,20 +192,68 @@ CRITICAL TRANSLATION GUIDELINES:
             translated = translated[1:-1].strip()
         return translated
 
-    def _translate_with_direct_engine(self, text: str, source_lang: str, target_lang: str) -> Optional[str]:
-        """
-        Direct high-speed Google Translation endpoint that does not suffer from scraping rate-limits.
-        """
-        import urllib.request, urllib.parse, json
-        src = (source_lang or 'en').split('-')[0].lower()
-        tgt = (target_lang or 'hi').split('-')[0].lower()
-        if src == 'auto':
-            src = 'auto'
+    LANGUAGE_NAME_MAP = {
+        'en': 'english',
+        'hi': 'hindi',
+        'zh': 'chinese simplified',
+        'es': 'spanish',
+        'fr': 'french',
+        'de': 'german',
+        'ja': 'japanese',
+        'ko': 'korean',
+        'ru': 'russian',
+        'ar': 'arabic',
+        'pt': 'portuguese',
+        'it': 'italian',
+    }
 
+    def _translate_with_mymemory_api(self, text: str, src: str, tgt: str) -> Optional[str]:
+        """Direct MyMemory REST API translation. Highly reliable on cloud datacenter IPs."""
+        import urllib.request, urllib.parse, json, html
+        try:
+            url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(text)}&langpair={src}|{tgt}"
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=6) as r:
+                data = json.loads(r.read().decode('utf-8'))
+                if data.get('responseStatus') in (200, '200'):
+                    raw = data.get('responseData', {}).get('translatedText', '')
+                    if raw and 'MYMEMORY WARNING' not in raw:
+                        cleaned = html.unescape(raw).strip()
+                        if cleaned:
+                            return cleaned
+        except Exception as e:
+            print(f"[!] MyMemory API error: {e}")
+        return None
+
+    def _translate_with_mymemory_pkg(self, text: str, src: str, tgt: str) -> Optional[str]:
+        """deep_translator MyMemoryTranslator with mapped language names."""
+        if not MyMemoryTranslator:
+            return None
+        import html
+        try:
+            src_name = self.LANGUAGE_NAME_MAP.get(src, src)
+            tgt_name = self.LANGUAGE_NAME_MAP.get(tgt, tgt)
+            raw = MyMemoryTranslator(source=src_name, target=tgt_name).translate(text)
+            if raw and 'MYMEMORY WARNING' not in raw:
+                cleaned = html.unescape(raw).strip()
+                if cleaned:
+                    return cleaned
+        except Exception as e:
+            print(f"[!] MyMemory pkg error: {e}")
+        return None
+
+    def _translate_with_google_gtx(self, text: str, src: str, tgt: str) -> Optional[str]:
+        """Direct Google GTX endpoint."""
+        import urllib.request, urllib.parse, json, html
         try:
             url = (
-                "https://translate.googleapis.com/translate_a/single?client=gtx&sl="
-                + src + "&tl=" + tgt + "&dt=t&q=" + urllib.parse.quote(text)
+                f"https://translate.googleapis.com/translate_a/single?client=gtx&sl={src}&tl={tgt}&dt=t&q="
+                + urllib.parse.quote(text)
             )
             req = urllib.request.Request(
                 url,
@@ -218,9 +266,9 @@ CRITICAL TRANSLATION GUIDELINES:
                 if data and data[0]:
                     translated = "".join([p[0] for p in data[0] if p and p[0]])
                     if translated and translated.strip():
-                        return translated.strip()
+                        return html.unescape(translated).strip()
         except Exception as e:
-            print(f"[!] Direct translation engine error: {e}")
+            print(f"[!] Google GTX error: {e}")
         return None
 
     def _translate_with_fallback(
@@ -231,8 +279,11 @@ CRITICAL TRANSLATION GUIDELINES:
         retrieved_items: List[Dict[str, Any]]
     ) -> str:
         """
-        High-reliability fallback translator using direct API, GoogleTranslator, and MyMemoryTranslator
-        so the application remains fully functional without external LLM API keys.
+        Multi-tiered translation engine:
+        1. MyMemory REST API (works reliably on cloud/Render datacenter IPs)
+        2. MyMemoryTranslator (deep_translator wrapper with normalized language names)
+        3. Google GTX direct endpoint
+        4. GoogleTranslator (deep_translator)
         """
         if not user_text.strip():
             return user_text
@@ -242,20 +293,33 @@ CRITICAL TRANSLATION GUIDELINES:
         if src == 'auto':
             src = 'en'
 
-        def is_valid_translation(text: str) -> bool:
-            if not text:
+        def is_valid_translation(cand: Optional[str]) -> bool:
+            if not cand or not cand.strip():
                 return False
-            low = text.lower()
-            if "error 500" in low or "server error" in low or "that’s all we know" in low or "no translation was found" in low:
+            low = cand.lower().strip()
+            if any(err in low for err in ["error 500", "server error", "that’s all we know", "no translation was found"]):
+                return False
+            # If languages are different and output is identical to input, it wasn't translated
+            if src != tgt and len(user_text.split()) > 1 and low == user_text.lower().strip():
                 return False
             return True
 
-        # 1. Primary: Direct high-speed API (does not trigger scraping 429 Too Many Requests)
-        direct_trans = self._translate_with_direct_engine(user_text, src, tgt)
-        if direct_trans and is_valid_translation(direct_trans):
-            return direct_trans
+        # Tier 1: Direct MyMemory API (high success rate on cloud servers)
+        res = self._translate_with_mymemory_api(user_text, src, tgt)
+        if is_valid_translation(res):
+            return res
 
-        # 2. Try GoogleTranslator with specified source
+        # Tier 2: deep_translator MyMemory
+        res = self._translate_with_mymemory_pkg(user_text, src, tgt)
+        if is_valid_translation(res):
+            return res
+
+        # Tier 3: Direct Google GTX
+        res = self._translate_with_google_gtx(user_text, src, tgt)
+        if is_valid_translation(res):
+            return res
+
+        # Tier 4: GoogleTranslator scraper
         if GOOGLE_TRANSLATOR_AVAILABLE:
             try:
                 translated = GoogleTranslator(source=src, target=tgt).translate(user_text)
@@ -264,27 +328,8 @@ CRITICAL TRANSLATION GUIDELINES:
             except Exception:
                 pass
 
-        # 3. Try MyMemoryTranslator
-        if MyMemoryTranslator:
-            try:
-                mem_src = f"{src}-US" if src == 'en' else (f"{src}-IN" if src == 'hi' else src)
-                mem_tgt = f"{tgt}-IN" if tgt == 'hi' else (f"{tgt}-US" if tgt == 'en' else tgt)
-                translated = MyMemoryTranslator(source=mem_src, target=mem_tgt).translate(user_text)
-                if is_valid_translation(translated):
-                    return translated
-            except Exception:
-                pass
-
-        # 4. Try auto source on Google
-        if GOOGLE_TRANSLATOR_AVAILABLE:
-            try:
-                translated = GoogleTranslator(source='auto', target=tgt).translate(user_text)
-                if is_valid_translation(translated):
-                    return translated
-            except Exception:
-                pass
-
         return user_text
+
 
     def translate(
         self,
