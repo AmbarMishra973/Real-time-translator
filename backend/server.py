@@ -205,7 +205,7 @@ def health_check():
 def root():
     return {
         "service": "Real-Time AI Translator + RAG",
-        "version": "2.0.0",
+        "version": "2.0.1",
         "status": "online",
         "llm_status": llm_translator.get_status(),
         "rag_domains": rag_engine.get_domains(),
