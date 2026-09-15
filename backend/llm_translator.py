@@ -192,6 +192,37 @@ CRITICAL TRANSLATION GUIDELINES:
             translated = translated[1:-1].strip()
         return translated
 
+    def _translate_with_direct_engine(self, text: str, source_lang: str, target_lang: str) -> Optional[str]:
+        """
+        Direct high-speed Google Translation endpoint that does not suffer from scraping rate-limits.
+        """
+        import urllib.request, urllib.parse, json
+        src = (source_lang or 'en').split('-')[0].lower()
+        tgt = (target_lang or 'hi').split('-')[0].lower()
+        if src == 'auto':
+            src = 'auto'
+
+        try:
+            url = (
+                "https://translate.googleapis.com/translate_a/single?client=gtx&sl="
+                + src + "&tl=" + tgt + "&dt=t&q=" + urllib.parse.quote(text)
+            )
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=6) as r:
+                data = json.loads(r.read().decode('utf-8'))
+                if data and data[0]:
+                    translated = "".join([p[0] for p in data[0] if p and p[0]])
+                    if translated and translated.strip():
+                        return translated.strip()
+        except Exception as e:
+            print(f"[!] Direct translation engine error: {e}")
+        return None
+
     def _translate_with_fallback(
         self,
         user_text: str,
@@ -200,10 +231,10 @@ CRITICAL TRANSLATION GUIDELINES:
         retrieved_items: List[Dict[str, Any]]
     ) -> str:
         """
-        Fallback translator using GoogleTranslator and MyMemoryTranslator
-        so the application remains fully functional even without external LLM API keys.
+        High-reliability fallback translator using direct API, GoogleTranslator, and MyMemoryTranslator
+        so the application remains fully functional without external LLM API keys.
         """
-        if not GOOGLE_TRANSLATOR_AVAILABLE or not user_text.strip():
+        if not user_text.strip():
             return user_text
 
         src = (source_lang or 'en').split('-')[0].lower()
@@ -219,15 +250,21 @@ CRITICAL TRANSLATION GUIDELINES:
                 return False
             return True
 
-        # 1. Try GoogleTranslator with specified source
-        try:
-            translated = GoogleTranslator(source=src, target=tgt).translate(user_text)
-            if is_valid_translation(translated):
-                return translated
-        except Exception:
-            pass
+        # 1. Primary: Direct high-speed API (does not trigger scraping 429 Too Many Requests)
+        direct_trans = self._translate_with_direct_engine(user_text, src, tgt)
+        if direct_trans and is_valid_translation(direct_trans):
+            return direct_trans
 
-        # 2. Try MyMemoryTranslator
+        # 2. Try GoogleTranslator with specified source
+        if GOOGLE_TRANSLATOR_AVAILABLE:
+            try:
+                translated = GoogleTranslator(source=src, target=tgt).translate(user_text)
+                if is_valid_translation(translated):
+                    return translated
+            except Exception:
+                pass
+
+        # 3. Try MyMemoryTranslator
         if MyMemoryTranslator:
             try:
                 mem_src = f"{src}-US" if src == 'en' else (f"{src}-IN" if src == 'hi' else src)
@@ -238,13 +275,14 @@ CRITICAL TRANSLATION GUIDELINES:
             except Exception:
                 pass
 
-        # 3. Try auto source on Google
-        try:
-            translated = GoogleTranslator(source='auto', target=tgt).translate(user_text)
-            if is_valid_translation(translated):
-                return translated
-        except Exception:
-            pass
+        # 4. Try auto source on Google
+        if GOOGLE_TRANSLATOR_AVAILABLE:
+            try:
+                translated = GoogleTranslator(source='auto', target=tgt).translate(user_text)
+                if is_valid_translation(translated):
+                    return translated
+            except Exception:
+                pass
 
         return user_text
 
