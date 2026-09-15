@@ -46,7 +46,7 @@ app.add_middleware(
 )
 
 # === Initialize Whisper Model ===
-WHISPER_SIZE = os.getenv("WHISPER_SIZE", "small")
+WHISPER_SIZE = os.getenv("WHISPER_SIZE", "base")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 print(f"[*] Initializing Faster-Whisper ({WHISPER_SIZE} on {WHISPER_DEVICE})...")
 try:
@@ -101,9 +101,11 @@ def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
     out_path = in_path + ".wav"
     try:
         cmd = [
-            "ffmpeg", "-y", "-i", in_path,
+            "ffmpeg", "-y",
+            "-err_detect", "ignore_err",
+            "-i", in_path,
             "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
-            "-af", "volume=1.8",
+            "-af", "volume=2.2",
             out_path
         ]
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -124,10 +126,11 @@ def convert_to_clean_wav(audio_bytes: bytes) -> bytes:
 
 
 WHISPER_HALLUCINATIONS = {
-    "you", "you.", "you!", "thank you", "thank you.", "thank you for watching",
+    "", "you", "you.", "you!", "thank you", "thank you.", "thank you for watching",
     "thank you for watching.", "thanks for watching", "thanks for watching!",
-    "...", ".", "..", "bye", "bye.", "amara.org", "subscribe", "subtitles by",
-    "subtitles by the amara.org community", "please subscribe"
+    "...", ".", "..", "....", ". . . .", "bye", "bye.", "amara.org", "subscribe",
+    "subtitles by", "subtitles by the amara.org community", "please subscribe",
+    "so", "so.", "yeah", "yeah."
 }
 
 
@@ -138,15 +141,18 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
 
     whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
 
-    # 2. Transcribe with VAD filter first
+    # 2. Fast Greedy Transcription with tuned VAD (beam_size=1, temperature=0.0 for speed and no hallucinations)
     try:
         segments, info = whisper_model.transcribe(
             io.BytesIO(wav_bytes),
             language=whisper_lang,
-            beam_size=5,
+            beam_size=1,
+            best_of=1,
+            temperature=0.0,
+            no_speech_threshold=0.6,
+            condition_on_previous_text=False,
             vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=300),
-            condition_on_previous_text=False
+            vad_parameters=dict(min_silence_duration_ms=250, speech_pad_ms=200, threshold=0.35)
         )
         text_parts = [seg.text for seg in segments]
         raw_text = ' '.join(text_parts).strip()
@@ -155,23 +161,30 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None):
         raw_text = ""
         info = None
 
-    # Fallback to non-VAD mode if VAD filter suppressed quiet speech
+    # Fallback to non-VAD mode if VAD filter suppressed quiet/short speech
     if not raw_text:
         segments, info = whisper_model.transcribe(
             io.BytesIO(wav_bytes),
             language=whisper_lang,
-            beam_size=5,
-            vad_filter=False,
-            condition_on_previous_text=False
+            beam_size=1,
+            best_of=1,
+            temperature=0.0,
+            no_speech_threshold=0.6,
+            condition_on_previous_text=False,
+            vad_filter=False
         )
         text_parts = [seg.text for seg in segments]
         raw_text = ' '.join(text_parts).strip()
 
-    # 3. Filter silence hallucinations
-    clean_text = raw_text
-    if clean_text.lower().strip(" .!?,") in WHISPER_HALLUCINATIONS:
-        print(f"[-] Discarded silence hallucination: '{raw_text}'")
+    # 3. Filter silence hallucinations & punctuation-only artifacts (must contain at least one alphanumeric character)
+    has_alphanumeric = any(c.isalnum() for c in raw_text)
+    stripped_word = raw_text.lower().strip(" .!?,;:-\"'\n\r\t")
+
+    if not has_alphanumeric or stripped_word in WHISPER_HALLUCINATIONS:
+        print(f"[-] Discarded silence / punctuation hallucination: '{raw_text}'")
         clean_text = ""
+    else:
+        clean_text = raw_text.strip()
 
     detected_lang = info.language if info else "en"
     prob = info.language_probability if info else 1.0
@@ -313,10 +326,11 @@ async def full_pipeline(
     transcript, info = await asyncio.to_thread(sync_transcribe, audio_bytes, source_lang)
     t_stt = time.perf_counter() - t_stt_start
 
-    if not transcript:
+    if not transcript or not any(c.isalnum() for c in transcript):
         return {
             "transcript": "",
             "translated_text": "",
+            "translated": "",
             "retrieved_context": [],
             "sources_used": [],
             "history": llm_translator.conversation_manager.get_history(session_id),

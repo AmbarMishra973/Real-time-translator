@@ -161,15 +161,31 @@ CRITICAL TRANSLATION GUIDELINES:
         if not self._groq_client:
             raise RuntimeError("Groq client not initialized or missing API key.")
 
-        response = self._groq_client.chat.completions.create(
-            model=self.groq_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Text to translate:\n{user_text}"}
-            ],
-            temperature=0.2,
-            max_tokens=256
-        )
+        try:
+            response = self._groq_client.chat.completions.create(
+                model=self.groq_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Text to translate:\n{user_text}"}
+                ],
+                temperature=0.2,
+                max_tokens=256
+            )
+        except Exception as e:
+            if "model_not_found" in str(e) or "does not exist" in str(e):
+                print("[!] Model unavailable, retrying with llama-3.1-8b-instant...")
+                response = self._groq_client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Text to translate:\n{user_text}"}
+                    ],
+                    temperature=0.2,
+                    max_tokens=256
+                )
+            else:
+                raise e
+
         translated = response.choices[0].message.content.strip()
         # Clean any surrounding quotes if present
         if translated.startswith('"') and translated.endswith('"'):
@@ -247,7 +263,7 @@ CRITICAL TRANSLATION GUIDELINES:
         import time
         t0 = time.perf_counter()
         text = (text or "").strip()
-        if not text:
+        if not text or not any(c.isalnum() for c in text):
             return {
                 "translated_text": "",
                 "retrieved_context": [],

@@ -160,8 +160,8 @@ function App() {
         const blob = new Blob(audioChunksRef.current, { type: finalType });
         console.log(`[Mic] Recorded ${audioChunksRef.current.length} chunks, total size: ${blob.size} bytes (${finalType})`);
 
-        if (blob.size < 600) {
-          alert('Recording was too short or no audio was captured. Please speak clearly for at least 1-2 seconds.');
+        if (blob.size < 250) {
+          alert('Recording was too short or no audio was detected. Please speak clearly for at least 1-2 seconds.');
           setIsProcessing(false);
           return;
         }
@@ -169,7 +169,7 @@ function App() {
         await executeAudioPipeline(blob);
       };
 
-      mediaRecorderRef.current.start(500);
+      mediaRecorderRef.current.start(250);
       setRecording(true);
       setRecordSeconds(0);
       setCurrentStep(1);
@@ -186,6 +186,10 @@ function App() {
   const stopRecording = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        // Flush any remaining audio buffer before stopping to ensure short sentences are preserved
+        mediaRecorderRef.current.requestData();
+      } catch (e) {}
       mediaRecorderRef.current.stop();
     }
     setRecording(false);
@@ -210,12 +214,15 @@ function App() {
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Backend pipeline failure.');
+      if (!response.ok) throw new Error(`Backend server responded with error ${response.status}`);
 
       const data = await response.json();
-      if (!data.transcript || !data.transcript.trim()) {
+      
+      // Strict validation: Must contain actual alphanumeric words (not dots or empty punctuation)
+      const hasSpokenContent = data.transcript && /[a-zA-Z0-9\u0900-\u097F\u4e00-\u9fa5\u0600-\u06FF]/.test(data.transcript);
+      if (!hasSpokenContent) {
         setIsProcessing(false);
-        alert('No speech was detected by Whisper. Please speak closer to the microphone and try again.');
+        alert('No clear voice detected in the recording. Please speak clearly into the microphone and try again.');
         return;
       }
 
@@ -246,7 +253,11 @@ function App() {
       }
     } catch (err) {
       console.error(err);
-      alert('Audio processing error: ' + err.message);
+      if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+        alert('Could not connect to backend server.\n\nIf using Render free tier, the backend may be waking up from sleep mode (takes ~30-45 seconds). Please wait a moment and try speaking again!');
+      } else {
+        alert('Audio processing error: ' + err.message);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -255,7 +266,7 @@ function App() {
   // Direct Text Translation with RAG
   const handleTranslateText = async () => {
     const text = transcribedText.trim();
-    if (!text) return;
+    if (!text || !/[a-zA-Z0-9\u0900-\u097F\u4e00-\u9fa5\u0600-\u06FF]/.test(text)) return;
 
     setIsProcessing(true);
     setCurrentStep(3);
@@ -307,7 +318,10 @@ function App() {
   // Play Neural TTS Audio & Measure Latency
   const playTTS = async (textOverride, baseMetrics) => {
     const text = textOverride || translatedText;
-    if (!text.trim()) return;
+    if (!text || !text.trim() || !/[a-zA-Z0-9\u0900-\u097F\u4e00-\u9fa5\u0600-\u06FF]/.test(text)) {
+      alert('No translatable text available to play.');
+      return;
+    }
 
     const ttsStart = performance.now();
     try {
@@ -335,12 +349,22 @@ function App() {
       });
 
       const blob = await res.blob();
+      if (blob.size < 100) {
+        throw new Error('Received empty audio from speech engine.');
+      }
       const audioUrl = URL.createObjectURL(blob);
       const audio = new Audio(audioUrl);
       audio.onended = () => URL.revokeObjectURL(audioUrl);
-      await audio.play();
+      audio.onerror = (e) => console.error('Audio playback error:', e);
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((e) => {
+          console.warn('Autoplay blocked or playback error:', e);
+        });
+      }
     } catch (err) {
-      console.error(err);
+      console.error('TTS error:', err);
+      alert('Audio playback error: ' + err.message);
     }
   };
 
