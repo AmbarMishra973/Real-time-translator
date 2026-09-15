@@ -62,7 +62,8 @@ def inspect_pcm16_wav(wav_bytes: bytes) -> dict[str, Any]:
         "duration_s": round(frames / sample_rate, 3) if sample_rate else 0.0,
         "rms_dbfs": round(rms_dbfs, 1),
         "peak_dbfs": round(peak_dbfs, 1),
-        "is_silent": rms_dbfs < -55.0,
+        # This is diagnostic only. Quiet recordings must still reach STT and its non-VAD fallback.
+        "is_silent": rms_dbfs < -65.0,
         "is_clipping": peak >= 32700,
     }
 
@@ -71,6 +72,48 @@ def validate_normalized_audio(diagnostics: dict[str, Any]) -> None:
     """Reject malformed conversion output, while treating silence as a normal STT outcome."""
     if diagnostics["sample_rate_hz"] != 16000 or diagnostics["channels"] != 1 or diagnostics["bit_depth"] != 16:
         raise ValueError("Audio conversion did not produce 16 kHz mono 16-bit PCM.")
-    if diagnostics["duration_s"] < 0.15:
+    if diagnostics["duration_s"] < 0.08:
         raise ValueError("Recording is too short to transcribe reliably.")
 
+
+def boost_quiet_pcm16_wav(
+    wav_bytes: bytes,
+    trigger_dbfs: float = -38.0,
+    target_dbfs: float = -24.0,
+    max_gain_db: float = 30.0,
+) -> tuple[bytes, float]:
+    """Apply measured, peak-safe gain to quiet PCM audio without filtering frequencies.
+
+    Unlike a fixed volume filter, this keeps normal recordings untouched and never
+    amplifies enough to clip. It intentionally performs no high/low-pass filtering:
+    16 kHz PCM retains the 0–8 kHz speech band, including lower-pitched voices.
+    """
+    diagnostics = inspect_pcm16_wav(wav_bytes)
+    rms_dbfs = diagnostics["rms_dbfs"]
+    peak_dbfs = diagnostics["peak_dbfs"]
+    if rms_dbfs >= trigger_dbfs or diagnostics["frames"] == 0:
+        return wav_bytes, 0.0
+
+    requested_gain_db = min(target_dbfs - rms_dbfs, max_gain_db)
+    peak_safe_gain_db = -1.0 - peak_dbfs
+    gain_db = max(0.0, min(requested_gain_db, peak_safe_gain_db))
+    if gain_db < 0.5:
+        return wav_bytes, 0.0
+
+    gain = 10 ** (gain_db / 20.0)
+    with wave.open(BytesIO(wav_bytes), "rb") as source:
+        params = source.getparams()
+        raw_frames = source.readframes(source.getnframes())
+    samples = array.array("h")
+    samples.frombytes(raw_frames)
+    if sys.byteorder != "little":
+        samples.byteswap()
+    amplified = array.array("h", (max(-32768, min(32767, round(sample * gain))) for sample in samples))
+    if sys.byteorder != "little":
+        amplified.byteswap()
+
+    output = BytesIO()
+    with wave.open(output, "wb") as destination:
+        destination.setparams(params)
+        destination.writeframes(amplified.tobytes())
+    return output.getvalue(), round(gain_db, 1)

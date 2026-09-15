@@ -44,7 +44,7 @@ An end-to-end Speech-to-Speech translation pipeline combining **Faster-Whisper S
 
 ### 1. Speech-to-Text (STT) Layer
 - Powered by `faster-whisper` (`small` by default, `int8` quantization on CPU) with an optional Groq Whisper fast path.
-- Automatic WebM/Opus to 16kHz mono 16-bit WAV conversion, followed by sample-rate/channel/duration/signal validation before STT. Audio normalization is disabled by default and can be measured explicitly with `STT_NORMALIZE_AUDIO=true`.
+- Automatic WebM/Opus to 16kHz mono 16-bit WAV conversion, followed by sample-rate/channel/duration/signal validation before STT. Quiet recordings receive measured, peak-safe PCM gain without high/low-pass filtering, preserving the 0–8 kHz speech band. Short utterances use non-VAD transcription first so words such as “hello” are not segmented away.
 - Dual-pass VAD fallback and hallucination filtering are used only after valid audio has been established.
 
 ### STT diagnostics

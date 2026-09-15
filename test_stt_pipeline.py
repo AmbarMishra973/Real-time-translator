@@ -5,7 +5,7 @@ import math
 import unittest
 import wave
 
-from backend.audio_diagnostics import inspect_pcm16_wav, upload_suffix, validate_normalized_audio
+from backend.audio_diagnostics import boost_quiet_pcm16_wav, inspect_pcm16_wav, upload_suffix, validate_normalized_audio
 
 
 def pcm16_wav(sample_rate=16000, channels=1, duration_s=0.5, amplitude=1000):
@@ -47,6 +47,21 @@ class AudioDiagnosticsTests(unittest.TestCase):
         self.assertEqual(upload_suffix("recording.webm", "audio/webm"), ".webm")
         self.assertEqual(upload_suffix(None, "audio/ogg; codecs=opus"), ".ogg")
         self.assertEqual(upload_suffix("untrusted.exe", None), ".bin")
+
+    def test_boosts_quiet_audio_without_clipping(self):
+        quiet_wav = pcm16_wav(amplitude=20)
+        boosted_wav, gain_db = boost_quiet_pcm16_wav(quiet_wav)
+        before = inspect_pcm16_wav(quiet_wav)
+        after = inspect_pcm16_wav(boosted_wav)
+        self.assertGreater(gain_db, 0)
+        self.assertGreater(after["rms_dbfs"], before["rms_dbfs"])
+        self.assertFalse(after["is_clipping"])
+
+    def test_does_not_change_normal_level_audio(self):
+        normal_wav = pcm16_wav(amplitude=12000)
+        unchanged_wav, gain_db = boost_quiet_pcm16_wav(normal_wav)
+        self.assertEqual(gain_db, 0)
+        self.assertEqual(unchanged_wav, normal_wav)
 
 
 if __name__ == "__main__":

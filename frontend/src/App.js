@@ -63,33 +63,9 @@ function App() {
   const mediaStreamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const captureMetadataRef = useRef({});
   const timerRef = useRef(null);
-  const speechRecognitionRef = useRef(null);
-  const browserFinalTranscriptRef = useRef('');
-  const browserRecognitionErrorRef = useRef(null);
-  const browserStopRequestedRef = useRef(false);
   const activeResultRequestIdRef = useRef(0);
-
-  const isWebSpeechSupported = typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
-  // Whisper is the deterministic default. Browser recognition is an explicit opt-in service.
-  const [sttEngine, setSttEngine] = useState('whisper');
-
-  const getRecognitionLang = (code) => {
-    const base = (code || 'en').split('-')[0].toLowerCase();
-    const map = {
-      'en': 'en-US',
-      'hi': 'hi-IN',
-      'es': 'es-ES',
-      'fr': 'fr-FR',
-      'de': 'de-DE',
-      'zh': 'zh-CN',
-      'ja': 'ja-JP',
-      'ko': 'ko-KR',
-      'ru': 'ru-RU',
-      'ar': 'ar-SA',
-    };
-    return map[base] || 'en-US';
-  };
 
   // Check LLM status from backend on mount
   const checkBackendStatus = useCallback(async () => {
@@ -143,7 +119,8 @@ function App() {
     setTargetLang(prev);
   };
 
-  // Start Voice Recording (Dual Mode: Live Browser Recognition vs Cloud Whisper)
+  // One deterministic microphone path: capture audio once, then let the backend select
+  // Groq Whisper when configured or local Faster-Whisper when it is not.
   const startRecording = async () => {
     setSttNotice('');
     setTranscribedText('');
@@ -152,71 +129,6 @@ function App() {
     setSourcesUsed([]);
     setProviderLabel('');
     setMetrics({ stt_s: null, rag_s: null, llm_s: null, tts_s: null, total_s: null });
-    browserFinalTranscriptRef.current = '';
-    browserRecognitionErrorRef.current = null;
-    browserStopRequestedRef.current = false;
-
-    if (sttEngine === 'browser' && isWebSpeechSupported) {
-      try {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = getRecognitionLang(sourceLang);
-
-        recognition.onresult = (event) => {
-          let interim = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-              browserFinalTranscriptRef.current += event.results[i][0].transcript + ' ';
-            } else {
-              interim += event.results[i][0].transcript;
-            }
-          }
-          const text = (browserFinalTranscriptRef.current + interim).trim();
-          if (text) {
-            setTranscribedText(text);
-          }
-        };
-
-        recognition.onerror = (err) => {
-          console.warn('Browser speech recognition notice:', err.error);
-          browserRecognitionErrorRef.current = err.error || 'unknown recognition error';
-          setSttNotice(`Live Mic could not transcribe this recording: ${browserRecognitionErrorRef.current}.`);
-        };
-
-        recognition.onend = () => {
-          if (timerRef.current) clearInterval(timerRef.current);
-          speechRecognitionRef.current = null;
-          setRecording(false);
-          if (!browserStopRequestedRef.current || browserRecognitionErrorRef.current) return;
-
-          const finalText = browserFinalTranscriptRef.current.trim();
-          if (!finalText) {
-            setSttNotice('No finalized speech was detected. Nothing was sent to translation.');
-            return;
-          }
-          setTranscribedText(finalText);
-          translateText(finalText);
-        };
-
-        recognition.start();
-        speechRecognitionRef.current = recognition;
-        setRecording(true);
-        setRecordSeconds(0);
-        setCurrentStep(1);
-
-        timerRef.current = setInterval(() => {
-          setRecordSeconds((s) => s + 1);
-        }, 1000);
-        return;
-      } catch (err) {
-        console.warn('Web Speech API failed, falling back to MediaRecorder:', err);
-        setSttNotice('Live Mic could not start; switching to Whisper AI recording.');
-      }
-    }
-
-    // MediaRecorder path (Whisper audio upload)
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert('Your browser does not support audio recording.');
       return;
@@ -231,6 +143,15 @@ function App() {
         }
       });
       mediaStreamRef.current = stream;
+      const settings = stream.getAudioTracks()[0]?.getSettings?.() || {};
+      captureMetadataRef.current = {
+        sampleRate: settings.sampleRate ?? null,
+        channelCount: settings.channelCount ?? null,
+        sampleSize: settings.sampleSize ?? null,
+        echoCancellation: settings.echoCancellation ?? null,
+        noiseSuppression: settings.noiseSuppression ?? null,
+        autoGainControl: settings.autoGainControl ?? null,
+      };
 
       let mimeType = 'audio/webm;codecs=opus';
       if (!MediaRecorder.isTypeSupported(mimeType)) {
@@ -264,7 +185,7 @@ function App() {
           return;
         }
 
-        await executeAudioPipeline(blob);
+        await executeAudioPipeline(blob, { ...captureMetadataRef.current, mimeType: finalType });
       };
 
       mediaRecorderRef.current.start(250);
@@ -284,16 +205,6 @@ function App() {
   // Stop Recording
   const stopRecording = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-
-    if (sttEngine === 'browser' && speechRecognitionRef.current) {
-      browserStopRequestedRef.current = true;
-      try {
-        speechRecognitionRef.current.stop();
-      } catch (e) {}
-      setRecording(false);
-      setCurrentStep(2);
-      return;
-    }
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
@@ -336,7 +247,7 @@ function App() {
   };
 
   // Audio Pipeline (Whisper STT ➔ RAG ➔ LLM)
-  const executeAudioPipeline = async (blob) => {
+  const executeAudioPipeline = async (blob, captureMetadata = {}) => {
     const requestId = ++activeResultRequestIdRef.current;
     setIsProcessing(true);
     setCurrentStep(2);
@@ -348,6 +259,7 @@ function App() {
       formData.append('target_lang', targetLang);
       formData.append('session_id', sessionId);
       formData.append('domain', 'all');
+      formData.append('capture_metadata', JSON.stringify(captureMetadata));
 
       const response = await fetch(`${BACKEND_URL}/pipeline`, {
         method: 'POST',
@@ -363,7 +275,9 @@ function App() {
       const hasSpokenContent = data.transcript && /[a-zA-Z0-9\u0900-\u097F\u4e00-\u9fa5\u0600-\u06FF]/.test(data.transcript);
       if (!hasSpokenContent) {
         setIsProcessing(false);
-        alert('No clear voice detected in the recording. Please speak clearly into the microphone and try again.');
+        const message = data.message || 'No speech was returned by the STT engine.';
+        setSttNotice(message);
+        alert(message);
         return;
       }
 
@@ -609,28 +523,6 @@ function App() {
           <div className="panel-header">
             <div className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span>🎤 Speech & Transcript</span>
-              {isWebSpeechSupported && (
-                <div className="engine-toggle-group">
-                  <button
-                    type="button"
-                    className={`engine-pill-btn ${sttEngine === 'browser' ? 'active' : ''}`}
-                    onClick={() => setSttEngine('browser')}
-                    disabled={recording || isProcessing}
-                    title="Live Instant Browser Recognition (0s latency, native accent clarity)"
-                  >
-                    ⚡ Live Mic
-                  </button>
-                  <button
-                    type="button"
-                    className={`engine-pill-btn ${sttEngine === 'whisper' ? 'active' : ''}`}
-                    onClick={() => setSttEngine('whisper')}
-                    disabled={recording || isProcessing}
-                    title="Neural Whisper Audio Transcription"
-                  >
-                    ☁️ Whisper AI
-                  </button>
-                </div>
-              )}
             </div>
             <div className="lang-selector-row">
               <select
@@ -674,10 +566,10 @@ function App() {
             )}
             <div className="record-status-text">
               {recording
-                ? (sttEngine === 'browser' ? `🎙️ Listening live (${recordSeconds}s)... Speak naturally, click ⏹ when done` : `🎙️ Recording audio (${recordSeconds}s)... Click ⏹ to transcribe`)
+                ? `🎙️ Recording audio (${recordSeconds}s)... Click ⏹ to transcribe`
                 : isProcessing
                   ? (currentStep === 2 ? '⏳ Transcribing audio (Whisper STT)...' : currentStep === 3 ? '🔍 Retrieving domain context (RAG)...' : currentStep === 4 ? '🌐 Translating transcript...' : '⚡ Processing...')
-                  : (sttNotice || (translatedText ? '✅ Translation complete. Click mic or type to translate again.' : (sttEngine === 'browser' ? '⚡ Click mic to speak with Live Recognition' : 'Click mic to record with Whisper AI, or type directly in the box below')))}
+                  : (sttNotice || (translatedText ? '✅ Translation complete. Click mic or type to translate again.' : 'Click mic to record with AI speech recognition, or type directly in the box below'))}
             </div>
           </div>
 

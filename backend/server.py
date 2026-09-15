@@ -34,7 +34,7 @@ import edge_tts
 
 from backend.rag_engine import rag_engine
 from backend.llm_translator import llm_translator
-from backend.audio_diagnostics import inspect_pcm16_wav, upload_suffix, validate_normalized_audio
+from backend.audio_diagnostics import boost_quiet_pcm16_wav, inspect_pcm16_wav, upload_suffix, validate_normalized_audio
 
 app = FastAPI(
     title="Real-Time AI Translator + RAG API",
@@ -104,6 +104,20 @@ def stt_log(event: str, utterance_id: str, **fields) -> None:
     """Emit structured, non-sensitive STT diagnostics; transcript text requires STT_DEBUG=true."""
     payload = {"event": event, "utterance_id": utterance_id, **fields}
     print("[STT] " + json.dumps(payload, ensure_ascii=False, default=str), flush=True)
+
+
+def parse_capture_metadata(raw_metadata: Optional[str]) -> dict:
+    """Keep only non-identifying browser audio settings supplied with an upload."""
+    if not raw_metadata:
+        return {}
+    try:
+        metadata = json.loads(raw_metadata)
+    except (TypeError, json.JSONDecodeError):
+        return {}
+    if not isinstance(metadata, dict):
+        return {}
+    allowed_keys = {"sampleRate", "channelCount", "sampleSize", "echoCancellation", "noiseSuppression", "autoGainControl", "mimeType"}
+    return {key: metadata[key] for key in allowed_keys if key in metadata and isinstance(metadata[key], (str, int, float, bool, type(None)))}
 
 
 def save_debug_audio(wav_bytes: bytes, utterance_id: str) -> None:
@@ -182,20 +196,23 @@ WHISPER_HALLUCINATIONS = {
 }
 
 
-def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Optional[str] = None, content_type: Optional[str] = None):
+def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Optional[str] = None, content_type: Optional[str] = None, capture_metadata: Optional[dict] = None):
     utterance_id = uuid.uuid4().hex[:12]
     stt_started_at = time.perf_counter()
     # 1. Convert and validate one complete utterance before it reaches an STT engine.
-    wav_bytes = convert_to_clean_wav(audio_bytes, upload_suffix(filename, content_type))
+    input_suffix = upload_suffix(filename, content_type)
+    wav_bytes = convert_to_clean_wav(audio_bytes, input_suffix)
     diagnostics = inspect_pcm16_wav(wav_bytes)
     validate_normalized_audio(diagnostics)
+    wav_bytes, gain_db = boost_quiet_pcm16_wav(wav_bytes)
+    if gain_db:
+        diagnostics = inspect_pcm16_wav(wav_bytes)
+        diagnostics["gain_db"] = gain_db
     whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
-    stt_log("audio_validated", utterance_id, input_bytes=len(audio_bytes), normalized_bytes=len(wav_bytes), source_language=whisper_lang or "auto", **diagnostics)
+    stt_log("audio_validated", utterance_id, input_bytes=len(audio_bytes), input_container=input_suffix, input_content_type=content_type, capture_metadata=capture_metadata or {}, normalized_bytes=len(wav_bytes), source_language=whisper_lang or "auto", **diagnostics)
     save_debug_audio(wav_bytes, utterance_id)
     if diagnostics["is_silent"]:
-        from types import SimpleNamespace
-        stt_log("no_speech", utterance_id, reason="signal_below_threshold", stt_latency_s=round(time.perf_counter() - stt_started_at, 3))
-        return "", SimpleNamespace(language=whisper_lang, language_probability=None, language_source="selected" if whisper_lang else "unknown"), diagnostics
+        stt_log("quiet_audio", utterance_id, reason="signal_below_diagnostic_threshold")
     stt_log("transcription_started", utterance_id, engine="groq" if llm_translator._groq_client else "local", source_language=whisper_lang or "auto")
 
     # 2. Fast-Path: Groq LPU Cloud Whisper (whisper-large-v3-turbo, ~180-250ms latency, 99% accuracy)
@@ -216,43 +233,29 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Op
     if whisper_model is None:
         raise RuntimeError("No STT engine is available. Configure Groq or install/cache the configured Faster-Whisper model.")
 
-    # 3. Local accuracy-first fallback. Keep parameters configurable for measured tuning.
-    try:
-        segments, info = whisper_model.transcribe(
-            io.BytesIO(wav_bytes),
-            language=whisper_lang,
-            beam_size=int(os.getenv("WHISPER_BEAM_SIZE", "5")),
-            temperature=0.0,
-            no_speech_threshold=0.6,
-            condition_on_previous_text=False,
-            vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=450, speech_pad_ms=250, threshold=0.35)
-        )
-        text_parts = [seg.text for seg in segments]
-        raw_text = ' '.join(text_parts).strip()
-    except Exception as e:
-        print(f"[TRANSCRIPTION_FAILED] VAD transcribe error: {e}, attempting non-VAD fallback...")
-        raw_text = ""
-        info = None
-
-    # Fallback to non-VAD mode if VAD filter suppressed quiet/short speech
-    if not raw_text:
+    # 3. Short utterances (for example, "hello") skip VAD first because segmentation
+    # can discard their entire speech window. Longer recordings retain VAD plus fallback.
+    use_vad_first = diagnostics["duration_s"] >= float(os.getenv("WHISPER_VAD_MIN_DURATION_S", "1.2"))
+    raw_text = ""
+    info = None
+    vad_attempts = [True, False] if use_vad_first else [False]
+    for use_vad in vad_attempts:
         try:
             segments, info = whisper_model.transcribe(
                 io.BytesIO(wav_bytes),
                 language=whisper_lang,
                 beam_size=int(os.getenv("WHISPER_BEAM_SIZE", "5")),
                 temperature=0.0,
-                no_speech_threshold=0.6,
+                no_speech_threshold=float(os.getenv("WHISPER_NO_SPEECH_THRESHOLD", "0.8")),
                 condition_on_previous_text=False,
-                vad_filter=False
+                vad_filter=use_vad,
+                vad_parameters=dict(min_silence_duration_ms=450, speech_pad_ms=250, threshold=0.35) if use_vad else None,
             )
-            text_parts = [seg.text for seg in segments]
-            raw_text = ' '.join(text_parts).strip()
+            raw_text = ' '.join(seg.text for seg in segments).strip()
+            if raw_text:
+                break
         except Exception as e:
-            print(f"[TRANSCRIPTION_FAILED] Non-VAD fallback error: {e}")
-            raw_text = ""
-            info = None
+            print(f"[TRANSCRIPTION_FAILED] {'VAD' if use_vad else 'non-VAD'} transcribe error: {e}")
 
     # 4. Filter silence hallucinations & punctuation-only artifacts
     has_alphanumeric = any(c.isalnum() for c in raw_text)
@@ -298,7 +301,8 @@ def root():
 @app.post("/transcribe")
 async def transcribe_audio(
     file: UploadFile = File(...),
-    lang: str = Form("en")
+    lang: str = Form("en"),
+    capture_metadata: Optional[str] = Form(None),
 ):
     """Whisper Speech-to-Text transcription."""
     audio_bytes = await file.read()
@@ -306,7 +310,7 @@ async def transcribe_audio(
         raise HTTPException(status_code=400, detail="Empty audio file received.")
 
     try:
-        text, info, diagnostics = await asyncio.to_thread(sync_transcribe, audio_bytes, lang, file.filename, file.content_type)
+        text, info, diagnostics = await asyncio.to_thread(sync_transcribe, audio_bytes, lang, file.filename, file.content_type, parse_capture_metadata(capture_metadata))
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
@@ -326,7 +330,8 @@ async def translate_text(
     source_lang: str = Form("en"),
     target_lang: str = Form("hi"),
     session_id: str = Form("default"),
-    domain: str = Form("all")
+    domain: str = Form("all"),
+    capture_metadata: Optional[str] = Form(None),
 ):
     """
     RAG-Augmented LLM Translation.
@@ -413,7 +418,7 @@ async def full_pipeline(
     # 1. STT Timing
     t_stt_start = time.perf_counter()
     try:
-        transcript, info, diagnostics = await asyncio.to_thread(sync_transcribe, audio_bytes, source_lang, file.filename, file.content_type)
+        transcript, info, diagnostics = await asyncio.to_thread(sync_transcribe, audio_bytes, source_lang, file.filename, file.content_type, parse_capture_metadata(capture_metadata))
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
