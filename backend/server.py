@@ -239,6 +239,21 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Op
             from types import SimpleNamespace
             info = SimpleNamespace(language=whisper_lang or "en", language_probability=1.0, language_source="groq")
             stt_log("transcription_completed", utterance_id, engine=engine_used, model=model_used, stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text)
+            print(
+                f"[STT DIAGNOSTIC LOG]\n"
+                f"  - recording MIME type:        {content_type}\n"
+                f"  - Blob size:                  {len(audio_bytes)}\n"
+                f"  - backend received byte size: {len(audio_bytes)}\n"
+                f"  - decoded audio duration:     {diagnostics.get('duration_s')}s\n"
+                f"  - sample rate:                {diagnostics.get('sample_rate_hz')} Hz\n"
+                f"  - channels:                   {diagnostics.get('channels')}\n"
+                f"  - RMS:                        {diagnostics.get('rms_dbfs')} dBFS\n"
+                f"  - peak amplitude:             {diagnostics.get('peak_dbfs')} dBFS\n"
+                f"  - converted WAV byte size:    {len(wav_bytes)}\n"
+                f"  - Whisper model:              {model_used}\n"
+                f"  - Whisper response:           \"{clean_text}\"\n"
+                f"  - final transcript:           \"{clean_text}\""
+            )
             return clean_text, info, diagnostics, engine_used, model_used
         except Exception as e:
             stt_log("groq_failed", utterance_id, error=str(e))
@@ -269,6 +284,21 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Op
     detected_lang = info.language if info.language else (whisper_lang or "en")
     prob = info.language_probability
     stt_log("transcription_completed", utterance_id, engine=engine_used, model=model_used, detected_language=detected_lang, confidence=prob, stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text)
+    print(
+        f"[STT DIAGNOSTIC LOG]\n"
+        f"  - recording MIME type:        {content_type}\n"
+        f"  - Blob size:                  {len(audio_bytes)}\n"
+        f"  - backend received byte size: {len(audio_bytes)}\n"
+        f"  - decoded audio duration:     {diagnostics.get('duration_s')}s\n"
+        f"  - sample rate:                {diagnostics.get('sample_rate_hz')} Hz\n"
+        f"  - channels:                   {diagnostics.get('channels')}\n"
+        f"  - RMS:                        {diagnostics.get('rms_dbfs')} dBFS\n"
+        f"  - peak amplitude:             {diagnostics.get('peak_dbfs')} dBFS\n"
+        f"  - converted WAV byte size:    {len(wav_bytes)}\n"
+        f"  - Whisper model:              {model_used}\n"
+        f"  - Whisper response:           \"{clean_text}\"\n"
+        f"  - final transcript:           \"{clean_text}\""
+    )
     return clean_text, info, diagnostics, engine_used, model_used
 
 
@@ -318,21 +348,15 @@ async def transcribe_audio(
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return {
-        "success": True,
-        "transcript": text,
-        "engine": engine_used,
-        "model": model_used,
-        "detected_lang": getattr(info, "language", lang),
-        "confidence": round(info.language_probability, 3) if getattr(info, "language_probability", None) is not None else None,
-        "audio_diagnostics": {
-            "duration_s": diagnostics.get("duration_s"),
-            "size_bytes": len(audio_bytes),
-            "rms_dbfs": diagnostics.get("rms_dbfs"),
-            "peak_dbfs": diagnostics.get("peak_dbfs"),
-            "sample_rate_hz": diagnostics.get("sample_rate_hz"),
-            "channels": diagnostics.get("channels"),
-            "mime_type": file.content_type,
-        }
+        "mime_type": file.content_type,
+        "bytes": len(audio_bytes),
+        "duration_seconds": diagnostics.get("duration_s"),
+        "sample_rate": diagnostics.get("sample_rate_hz"),
+        "channels": diagnostics.get("channels"),
+        "rms_dbfs": diagnostics.get("rms_dbfs"),
+        "peak_dbfs": diagnostics.get("peak_dbfs"),
+        "whisper_model": model_used,
+        "transcript": text
     }
 
 

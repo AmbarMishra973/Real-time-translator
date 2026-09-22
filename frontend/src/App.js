@@ -280,6 +280,7 @@ function App() {
       }
 
       setTranscribedText(data.transcript);
+      setSttNotice('');
       setCurrentStep(3);
       setRetrievedChunks(data.retrieved_context || []);
       setSourcesUsed(data.sources_used || []);
