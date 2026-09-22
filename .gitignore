@@ -8,3 +8,4 @@ node_modules/
 build/
 .DS_Store
 Thumbs.db
+backend/debug_audio/

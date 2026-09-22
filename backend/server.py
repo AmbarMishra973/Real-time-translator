@@ -216,76 +216,60 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Op
     wav_bytes = convert_to_clean_wav(audio_bytes, input_suffix)
     diagnostics = inspect_pcm16_wav(wav_bytes)
     validate_normalized_audio(diagnostics)
-    wav_bytes, gain_db = boost_quiet_pcm16_wav(wav_bytes)
-    if gain_db:
-        diagnostics = inspect_pcm16_wav(wav_bytes)
-        diagnostics["gain_db"] = gain_db
+
+    # Save audio files locally for external manual listening & diagnosis
+    debug_dir = Path("backend/debug_audio")
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        (debug_dir / f"last_recording{input_suffix}").write_bytes(audio_bytes)
+        (debug_dir / "last_recording.wav").write_bytes(wav_bytes)
+    except Exception as e:
+        print(f"[!] Warning: Could not write debug audio: {e}")
+
     whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
     stt_log("audio_validated", utterance_id, input_bytes=len(audio_bytes), input_container=input_suffix, input_content_type=content_type, capture_metadata=capture_metadata or {}, normalized_bytes=len(wav_bytes), source_language=whisper_lang or "auto", **diagnostics)
-    save_debug_audio(wav_bytes, utterance_id)
-    if diagnostics["is_silent"]:
-        stt_log("quiet_audio", utterance_id, reason="signal_below_diagnostic_threshold")
-    stt_log("transcription_started", utterance_id, engine="groq" if llm_translator._groq_client else "local", source_language=whisper_lang or "auto")
 
-    # 2. Fast-Path: Groq LPU Cloud Whisper (whisper-large-v3-turbo, ~180-250ms latency, 99% accuracy)
+    # 2. Strict Single Path: Groq LPU Cloud Whisper if configured
     if llm_translator._groq_client:
+        engine_used = "groq"
+        model_used = "whisper-large-v3-turbo"
+        stt_log("transcription_started", utterance_id, engine=engine_used, model=model_used, source_language=whisper_lang or "auto")
         try:
-            groq_text = llm_translator.transcribe_with_groq(wav_bytes, whisper_lang)
-            if groq_text:
-                clean_text = groq_text.strip()
-                has_alnum = any(c.isalnum() for c in clean_text)
-                stripped = clean_text.lower().strip(" .!?,;:-\"'\n\r\t")
-                if has_alnum and stripped not in WHISPER_HALLUCINATIONS:
-                    from types import SimpleNamespace
-                    stt_log("transcription_completed", utterance_id, engine="groq", stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text if os.getenv("STT_DEBUG", "false").lower() == "true" else None)
-                    return clean_text, SimpleNamespace(language=whisper_lang, language_probability=None, language_source="selected" if whisper_lang else "unknown"), diagnostics
+            clean_text = llm_translator.transcribe_with_groq(wav_bytes, whisper_lang)
+            from types import SimpleNamespace
+            info = SimpleNamespace(language=whisper_lang or "en", language_probability=1.0, language_source="groq")
+            stt_log("transcription_completed", utterance_id, engine=engine_used, model=model_used, stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text)
+            return clean_text, info, diagnostics, engine_used, model_used
         except Exception as e:
-            print(f"[!] Groq Whisper fast-path failed: {e}, falling back to local Whisper...")
+            stt_log("groq_failed", utterance_id, error=str(e))
+            # DO NOT SILENTLY FALLBACK - Return explicit failure so root cause is visible
+            raise HTTPException(status_code=502, detail=f"Groq Whisper failed: {e}")
 
+    # 3. Local Whisper (Used ONLY when Groq client is not initialized)
     if whisper_model is None:
         raise RuntimeError("No STT engine is available. Configure Groq or install/cache the configured Faster-Whisper model.")
 
-    # 3. Short utterances (for example, "hello") skip VAD first because segmentation
-    # can discard their entire speech window. Longer recordings retain VAD plus fallback.
-    use_vad_first = diagnostics["duration_s"] >= float(os.getenv("WHISPER_VAD_MIN_DURATION_S", "1.2"))
-    raw_text = ""
-    info = None
-    vad_attempts = [True, False] if use_vad_first else [False]
-    for use_vad in vad_attempts:
-        try:
-            segments, info = whisper_model.transcribe(
-                io.BytesIO(wav_bytes),
-                language=whisper_lang,
-                beam_size=int(os.getenv("WHISPER_BEAM_SIZE", "5")),
-                temperature=0.0,
-                no_speech_threshold=float(os.getenv("WHISPER_NO_SPEECH_THRESHOLD", "0.8")),
-                condition_on_previous_text=False,
-                vad_filter=use_vad,
-                vad_parameters=dict(min_silence_duration_ms=450, speech_pad_ms=250, threshold=0.35) if use_vad else None,
-            )
-            raw_text = ' '.join(seg.text for seg in segments).strip()
-            if raw_text:
-                break
-        except Exception as e:
-            print(f"[TRANSCRIPTION_FAILED] {'VAD' if use_vad else 'non-VAD'} transcribe error: {e}")
+    engine_used = "local"
+    model_used = WHISPER_SIZE
+    stt_log("transcription_started", utterance_id, engine=engine_used, model=model_used, source_language=whisper_lang or "auto")
 
-    # 4. Filter silence hallucinations & punctuation-only artifacts
-    has_alphanumeric = any(c.isalnum() for c in raw_text)
-    stripped_word = raw_text.lower().strip(" .!?,;:-\"'\n\r\t")
-
-    if not has_alphanumeric or stripped_word in WHISPER_HALLUCINATIONS:
-        stt_log("no_speech", utterance_id, reason="empty_or_hallucination", stt_latency_s=round(time.perf_counter() - stt_started_at, 3))
-        clean_text = ""
-    else:
-        clean_text = raw_text.strip()
+    # Direct transcription: No artificial gain, no VAD suppression of short utterances
+    segments, info = whisper_model.transcribe(
+        io.BytesIO(wav_bytes),
+        language=whisper_lang,
+        beam_size=1,
+        temperature=0.0,
+        vad_filter=False,
+    )
+    clean_text = ' '.join(seg.text for seg in segments).strip()
 
     if info is None:
         from types import SimpleNamespace
         info = SimpleNamespace(language=whisper_lang, language_probability=None, language_source="selected" if whisper_lang else "unknown")
     detected_lang = info.language if info.language else (whisper_lang or "en")
     prob = info.language_probability
-    stt_log("transcription_completed", utterance_id, engine="local", detected_language=detected_lang, confidence=prob, stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text if os.getenv("STT_DEBUG", "false").lower() == "true" else None)
-    return clean_text, info, diagnostics
+    stt_log("transcription_completed", utterance_id, engine=engine_used, model=model_used, detected_language=detected_lang, confidence=prob, stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text)
+    return clean_text, info, diagnostics, engine_used, model_used
 
 
 # === API Endpoints ===
@@ -316,23 +300,39 @@ async def transcribe_audio(
     lang: str = Form("en"),
     capture_metadata: Optional[str] = Form(None),
 ):
-    """Whisper Speech-to-Text transcription."""
+    """
+    Clean STT Diagnostic Endpoint:
+    Receives audio, validates, transcribes without LLM, RAG, or TTS.
+    """
     audio_bytes = await file.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Empty audio file received.")
 
     try:
-        text, info, diagnostics = await asyncio.to_thread(sync_transcribe, audio_bytes, lang, file.filename, file.content_type, parse_capture_metadata(capture_metadata))
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        text, info, diagnostics, engine_used, model_used = await asyncio.to_thread(
+            sync_transcribe, audio_bytes, lang, file.filename, file.content_type, parse_capture_metadata(capture_metadata)
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
     return {
-        "text": text,
-        "detected_lang": info.language,
-        "confidence": round(info.language_probability, 3) if info.language_probability is not None else None,
-        "language_source": getattr(info, "language_source", "detected"),
-        "audio": diagnostics if os.getenv("STT_DEBUG", "false").lower() == "true" else None,
+        "success": True,
+        "transcript": text,
+        "engine": engine_used,
+        "model": model_used,
+        "detected_lang": getattr(info, "language", lang),
+        "confidence": round(info.language_probability, 3) if getattr(info, "language_probability", None) is not None else None,
+        "audio_diagnostics": {
+            "duration_s": diagnostics.get("duration_s"),
+            "size_bytes": len(audio_bytes),
+            "rms_dbfs": diagnostics.get("rms_dbfs"),
+            "peak_dbfs": diagnostics.get("peak_dbfs"),
+            "sample_rate_hz": diagnostics.get("sample_rate_hz"),
+            "channels": diagnostics.get("channels"),
+            "mime_type": file.content_type,
+        }
     }
 
 
@@ -431,11 +431,15 @@ async def full_pipeline(
     # 1. STT Timing
     t_stt_start = time.perf_counter()
     try:
-        transcript, info, diagnostics = await asyncio.to_thread(sync_transcribe, audio_bytes, source_lang, file.filename, file.content_type, parse_capture_metadata(capture_metadata))
+        transcript, info, diagnostics, engine_used, model_used = await asyncio.to_thread(
+            sync_transcribe, audio_bytes, source_lang, file.filename, file.content_type, parse_capture_metadata(capture_metadata)
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except HTTPException:
+        raise
     t_stt = time.perf_counter() - t_stt_start
 
     if not transcript or not any(c.isalnum() for c in transcript):
@@ -492,6 +496,8 @@ async def full_pipeline(
             "llm_s": round(t_llm, 2),
             "total_s": round(t_total, 2)
         },
+        "stt_engine": engine_used,
+        "stt_model": model_used,
         "audio": diagnostics if os.getenv("STT_DEBUG", "false").lower() == "true" else None,
     }
 

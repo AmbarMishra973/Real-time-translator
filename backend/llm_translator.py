@@ -197,33 +197,31 @@ RECENT CONVERSATION (for pronoun/context resolution):
                 translated = translated[len(prefix):].strip()
         return translated
 
-    def transcribe_with_groq(self, audio_bytes: bytes, lang: Optional[str] = None) -> Optional[str]:
+    def transcribe_with_groq(self, audio_bytes: bytes, lang: Optional[str] = None) -> str:
         """
-        Ultra-low latency transcription via Groq LPU using whisper-large-v3-turbo (~200ms latency, state-of-the-art accuracy).
+        Ultra-low latency transcription via Groq LPU using whisper-large-v3-turbo.
+        Sends explicit multipart tuple without silent fallback.
         """
         if not self._groq_client:
-            return None
-        import io
-        try:
-            whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
-            audio_file = io.BytesIO(audio_bytes)
-            audio_file.name = "recording.wav"
+            raise RuntimeError("Groq STT engine is not available: GROQ_API_KEY is not configured.")
 
-            kwargs = {
-                "file": audio_file,
-                "model": "whisper-large-v3-turbo",
-                "temperature": 0.0,
-                "response_format": "json"
-            }
-            if whisper_lang:
-                kwargs["language"] = whisper_lang
+        whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
+        model_name = "whisper-large-v3-turbo"
+        print(f"[STT] Groq Whisper request: model={model_name}, audio_bytes={len(audio_bytes)}, lang={whisper_lang or 'auto'}")
 
-            transcription = self._groq_client.audio.transcriptions.create(**kwargs)
-            text = transcription.text.strip() if hasattr(transcription, "text") else str(transcription).strip()
-            return text if text else None
-        except Exception as e:
-            print(f"[!] Groq Whisper LPU error: {e}, will fallback to local Whisper")
-            return None
+        kwargs = {
+            "file": ("recording.wav", audio_bytes, "audio/wav"),
+            "model": model_name,
+            "temperature": 0.0,
+            "response_format": "json"
+        }
+        if whisper_lang:
+            kwargs["language"] = whisper_lang
+
+        transcription = self._groq_client.audio.transcriptions.create(**kwargs)
+        text = transcription.text.strip() if hasattr(transcription, "text") else str(transcription).strip()
+        print(f"[STT] Groq Whisper response: \"{text}\"")
+        return text
 
     LANGUAGE_NAME_MAP = {
         'en': 'english',

@@ -82,38 +82,6 @@ def boost_quiet_pcm16_wav(
     target_dbfs: float = -24.0,
     max_gain_db: float = 30.0,
 ) -> tuple[bytes, float]:
-    """Apply measured, peak-safe gain to quiet PCM audio without filtering frequencies.
+    """Disabled: returns raw audio untouched with 0.0 dB gain to prevent amplifying background noise."""
+    return wav_bytes, 0.0
 
-    Unlike a fixed volume filter, this keeps normal recordings untouched and never
-    amplifies enough to clip. It intentionally performs no high/low-pass filtering:
-    16 kHz PCM retains the 0–8 kHz speech band, including lower-pitched voices.
-    """
-    diagnostics = inspect_pcm16_wav(wav_bytes)
-    rms_dbfs = diagnostics["rms_dbfs"]
-    peak_dbfs = diagnostics["peak_dbfs"]
-    if rms_dbfs >= trigger_dbfs or diagnostics["frames"] == 0:
-        return wav_bytes, 0.0
-
-    requested_gain_db = min(target_dbfs - rms_dbfs, max_gain_db)
-    peak_safe_gain_db = -1.0 - peak_dbfs
-    gain_db = max(0.0, min(requested_gain_db, peak_safe_gain_db))
-    if gain_db < 0.5:
-        return wav_bytes, 0.0
-
-    gain = 10 ** (gain_db / 20.0)
-    with wave.open(BytesIO(wav_bytes), "rb") as source:
-        params = source.getparams()
-        raw_frames = source.readframes(source.getnframes())
-    samples = array.array("h")
-    samples.frombytes(raw_frames)
-    if sys.byteorder != "little":
-        samples.byteswap()
-    amplified = array.array("h", (max(-32768, min(32767, round(sample * gain))) for sample in samples))
-    if sys.byteorder != "little":
-        amplified.byteswap()
-
-    output = BytesIO()
-    with wave.open(output, "wb") as destination:
-        destination.setparams(params)
-        destination.writeframes(amplified.tobytes())
-    return output.getvalue(), round(gain_db, 1)

@@ -188,7 +188,8 @@ function App() {
         await executeAudioPipeline(blob, { ...captureMetadataRef.current, mimeType: finalType });
       };
 
-      mediaRecorderRef.current.start(250);
+      // Record full continuous stream without timeslice slicing to prevent fragmented WebM clusters
+      mediaRecorderRef.current.start();
       setRecording(true);
       setRecordSeconds(0);
       setCurrentStep(1);
@@ -207,9 +208,6 @@ function App() {
     if (timerRef.current) clearInterval(timerRef.current);
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try {
-        mediaRecorderRef.current.requestData();
-      } catch (e) {}
       mediaRecorderRef.current.stop();
     }
     setRecording(false);
