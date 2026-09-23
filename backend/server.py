@@ -11,11 +11,13 @@ Orchestrates:
 import os
 import io
 import sys
+import re
 import asyncio
 import json
 import time
 import uuid
 from pathlib import Path
+from types import SimpleNamespace
 
 # Ensure safe console output on Windows
 if sys.platform == "win32":
@@ -34,7 +36,7 @@ import edge_tts
 
 from backend.rag_engine import rag_engine
 from backend.llm_translator import llm_translator
-from backend.audio_diagnostics import boost_quiet_pcm16_wav, inspect_pcm16_wav, upload_suffix, validate_normalized_audio
+from backend.audio_diagnostics import boost_quiet_pcm16_wav, inspect_pcm16_wav, pad_pcm16_wav, upload_suffix, validate_normalized_audio
 
 app = FastAPI(
     title="Real-Time AI Translator + RAG API",
@@ -211,11 +213,72 @@ WHISPER_HALLUCINATIONS = {
 def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Optional[str] = None, content_type: Optional[str] = None, capture_metadata: Optional[dict] = None):
     utterance_id = uuid.uuid4().hex[:12]
     stt_started_at = time.perf_counter()
-    # 1. Convert and validate one complete utterance before it reaches an STT engine.
+
+    # 1. Convert and validate initial incoming audio container into 16kHz mono WAV
     input_suffix = upload_suffix(filename, content_type)
     wav_bytes = convert_to_clean_wav(audio_bytes, input_suffix)
-    diagnostics = inspect_pcm16_wav(wav_bytes)
-    validate_normalized_audio(diagnostics)
+    pre_diag = inspect_pcm16_wav(wav_bytes)
+    validate_normalized_audio(pre_diag)
+
+    # 2. Adaptive Peak-Safe Gain Boost
+    wav_bytes, gain_db_applied = boost_quiet_pcm16_wav(wav_bytes)
+    post_diag = inspect_pcm16_wav(wav_bytes)
+    post_diag["pre_rms_dbfs"] = pre_diag["rms_dbfs"]
+    post_diag["pre_peak_dbfs"] = pre_diag["peak_dbfs"]
+    post_diag["pre_duration_s"] = pre_diag["duration_s"]
+    post_diag["gain_db_applied"] = gain_db_applied
+
+    whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
+
+    # 3. Pre-Flight Silence Gate (FROZEN HERE on post-gain, pre-padding signal levels)
+    # Gating uses pre-padding energy so zero-padding does not dilute RMS of short utterances
+    if post_diag["rms_dbfs"] < -55.0:
+        if pre_diag["rms_dbfs"] < -60.0:
+            gate_reason = "true_silence"
+        elif pre_diag["peak_dbfs"] >= -3.0 or gain_db_applied < ((-24.0 - pre_diag["rms_dbfs"]) - 1.0):
+            gate_reason = "headroom_limited"
+        else:
+            gate_reason = "true_silence"
+
+        post_diag["is_silent_gate"] = True
+        post_diag["gate_reason"] = gate_reason
+        post_diag["gate_message"] = "No speech detected — please speak closer to the microphone."
+        post_diag["suspected_hallucination"] = False
+        post_diag["padded_duration_s"] = post_diag["duration_s"]
+
+        stt_log(
+            "silence_gate_triggered",
+            utterance_id,
+            gate_reason=gate_reason,
+            pre_rms_dbfs=pre_diag["rms_dbfs"],
+            post_rms_dbfs=post_diag["rms_dbfs"],
+            gain_applied=gain_db_applied,
+            duration_s=post_diag["duration_s"],
+        )
+        print(
+            f"[STT DIAGNOSTIC LOG (SILENCE GATE)]\n"
+            f"  - recording MIME type:        {content_type}\n"
+            f"  - Blob size:                  {len(audio_bytes)}\n"
+            f"  - pre-gain RMS:               {pre_diag['rms_dbfs']} dBFS\n"
+            f"  - pre-gain Peak:              {pre_diag['peak_dbfs']} dBFS\n"
+            f"  - gain applied:               +{gain_db_applied} dB\n"
+            f"  - post-gain RMS:              {post_diag['rms_dbfs']} dBFS\n"
+            f"  - post-gain Peak:             {post_diag['peak_dbfs']} dBFS\n"
+            f"  - gate reason:                {gate_reason}\n"
+            f"  - action:                     Skipped Whisper call completely (gate fired)"
+        )
+        info = SimpleNamespace(language=whisper_lang or "en", language_probability=0.0, language_source="gate")
+        return "", info, post_diag, "gate", "none"
+
+    post_diag["is_silent_gate"] = False
+    post_diag["gate_reason"] = None
+
+    # 4. Temporal Padding: Pad short clips (< 1.0s) with 250ms digital silence for phoneme context
+    if post_diag["duration_s"] < 1.0:
+        wav_bytes, padded_duration = pad_pcm16_wav(wav_bytes, pad_ms=250)
+        post_diag["padded_duration_s"] = padded_duration
+    else:
+        post_diag["padded_duration_s"] = post_diag["duration_s"]
 
     # Save audio files locally for external manual listening & diagnosis
     debug_dir = Path("backend/debug_audio")
@@ -226,80 +289,88 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Op
     except Exception as e:
         print(f"[!] Warning: Could not write debug audio: {e}")
 
-    whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
-    stt_log("audio_validated", utterance_id, input_bytes=len(audio_bytes), input_container=input_suffix, input_content_type=content_type, capture_metadata=capture_metadata or {}, normalized_bytes=len(wav_bytes), source_language=whisper_lang or "auto", **diagnostics)
+    stt_log("audio_validated", utterance_id, input_bytes=len(audio_bytes), input_container=input_suffix, input_content_type=content_type, capture_metadata=capture_metadata or {}, normalized_bytes=len(wav_bytes), source_language=whisper_lang or "auto", **post_diag)
 
-    # 2. Strict Single Path: Groq LPU Cloud Whisper if configured
+    # 5. Whisper Transcription (Groq LPU primary, Local Faster-Whisper fallback)
     if llm_translator._groq_client:
         engine_used = "groq"
         model_used = "whisper-large-v3-turbo"
         stt_log("transcription_started", utterance_id, engine=engine_used, model=model_used, source_language=whisper_lang or "auto")
         try:
             clean_text = llm_translator.transcribe_with_groq(wav_bytes, whisper_lang)
-            from types import SimpleNamespace
             info = SimpleNamespace(language=whisper_lang or "en", language_probability=1.0, language_source="groq")
-            stt_log("transcription_completed", utterance_id, engine=engine_used, model=model_used, stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text)
-            print(
-                f"[STT DIAGNOSTIC LOG]\n"
-                f"  - recording MIME type:        {content_type}\n"
-                f"  - Blob size:                  {len(audio_bytes)}\n"
-                f"  - backend received byte size: {len(audio_bytes)}\n"
-                f"  - decoded audio duration:     {diagnostics.get('duration_s')}s\n"
-                f"  - sample rate:                {diagnostics.get('sample_rate_hz')} Hz\n"
-                f"  - channels:                   {diagnostics.get('channels')}\n"
-                f"  - RMS:                        {diagnostics.get('rms_dbfs')} dBFS\n"
-                f"  - peak amplitude:             {diagnostics.get('peak_dbfs')} dBFS\n"
-                f"  - converted WAV byte size:    {len(wav_bytes)}\n"
-                f"  - Whisper model:              {model_used}\n"
-                f"  - Whisper response:           \"{clean_text}\"\n"
-                f"  - final transcript:           \"{clean_text}\""
-            )
-            return clean_text, info, diagnostics, engine_used, model_used
         except Exception as e:
             stt_log("groq_failed", utterance_id, error=str(e))
-            # DO NOT SILENTLY FALLBACK - Return explicit failure so root cause is visible
             raise HTTPException(status_code=502, detail=f"Groq Whisper failed: {e}")
+    else:
+        if whisper_model is None:
+            raise RuntimeError("No STT engine is available. Configure Groq or install/cache the configured Faster-Whisper model.")
 
-    # 3. Local Whisper (Used ONLY when Groq client is not initialized)
-    if whisper_model is None:
-        raise RuntimeError("No STT engine is available. Configure Groq or install/cache the configured Faster-Whisper model.")
+        engine_used = "local"
+        model_used = WHISPER_SIZE
+        stt_log("transcription_started", utterance_id, engine=engine_used, model=model_used, source_language=whisper_lang or "auto")
 
-    engine_used = "local"
-    model_used = WHISPER_SIZE
-    stt_log("transcription_started", utterance_id, engine=engine_used, model=model_used, source_language=whisper_lang or "auto")
+        segments, info = whisper_model.transcribe(
+            io.BytesIO(wav_bytes),
+            language=whisper_lang,
+            beam_size=1,
+            temperature=0.0,
+            vad_filter=False,
+        )
+        clean_text = ' '.join(seg.text for seg in segments).strip()
+        if info is None:
+            info = SimpleNamespace(language=whisper_lang, language_probability=None, language_source="selected" if whisper_lang else "unknown")
 
-    # Direct transcription: No artificial gain, no VAD suppression of short utterances
-    segments, info = whisper_model.transcribe(
-        io.BytesIO(wav_bytes),
-        language=whisper_lang,
-        beam_size=1,
-        temperature=0.0,
-        vad_filter=False,
-    )
-    clean_text = ' '.join(seg.text for seg in segments).strip()
+    # 6. Normalized Post-Transcription Hallucination Guard
+    clean_norm = re.sub(r'[^\w\s]', '', (clean_text or '').lower()).strip()
+    SUSPECTED_HALLUCINATIONS = {
+        "thank you", "thank you very much", "thanks for watching", "you", "bye", "subscribe"
+    }
+    is_suspected = False
+    if (
+        clean_norm in SUSPECTED_HALLUCINATIONS
+        and post_diag.get("pre_duration_s", post_diag["duration_s"]) > 2.0
+        and post_diag.get("pre_rms_dbfs", 0.0) < -38.0
+    ):
+        is_suspected = True
+        stt_log("suspected_hallucination", utterance_id, text=clean_text, normalized_text=clean_norm, pre_rms_dbfs=post_diag.get("pre_rms_dbfs"), duration_s=post_diag["duration_s"])
+        print(f"[STT] Suspected hallucination on quiet audio ('{clean_text}'), consider re-recording", flush=True)
 
-    if info is None:
-        from types import SimpleNamespace
-        info = SimpleNamespace(language=whisper_lang, language_probability=None, language_source="selected" if whisper_lang else "unknown")
-    detected_lang = info.language if info.language else (whisper_lang or "en")
-    prob = info.language_probability
-    stt_log("transcription_completed", utterance_id, engine=engine_used, model=model_used, detected_language=detected_lang, confidence=prob, stt_latency_s=round(time.perf_counter() - stt_started_at, 3), text=clean_text)
+    post_diag["suspected_hallucination"] = is_suspected
+
+    # 7. Complete Diagnostic Report
     print(
         f"[STT DIAGNOSTIC LOG]\n"
         f"  - recording MIME type:        {content_type}\n"
         f"  - Blob size:                  {len(audio_bytes)}\n"
         f"  - backend received byte size: {len(audio_bytes)}\n"
-        f"  - decoded audio duration:     {diagnostics.get('duration_s')}s\n"
-        f"  - sample rate:                {diagnostics.get('sample_rate_hz')} Hz\n"
-        f"  - channels:                   {diagnostics.get('channels')}\n"
-        f"  - RMS:                        {diagnostics.get('rms_dbfs')} dBFS\n"
-        f"  - peak amplitude:             {diagnostics.get('peak_dbfs')} dBFS\n"
-        f"  - converted WAV byte size:    {len(wav_bytes)}\n"
+        f"  - pre-gain RMS:               {post_diag.get('pre_rms_dbfs')} dBFS\n"
+        f"  - pre-gain Peak:              {post_diag.get('pre_peak_dbfs')} dBFS\n"
+        f"  - gain applied:               +{post_diag.get('gain_db_applied')} dB\n"
+        f"  - post-gain RMS:              {post_diag.get('rms_dbfs')} dBFS\n"
+        f"  - post-gain Peak:             {post_diag.get('peak_dbfs')} dBFS\n"
+        f"  - pre-pad duration:           {post_diag.get('pre_duration_s')}s\n"
+        f"  - post-pad duration:          {post_diag.get('padded_duration_s')}s\n"
+        f"  - sample rate:                {post_diag.get('sample_rate_hz')} Hz\n"
+        f"  - channels:                   {post_diag.get('channels')}\n"
         f"  - Whisper model:              {model_used}\n"
         f"  - Whisper response:           \"{clean_text}\"\n"
+        f"  - suspected hallucination:    {is_suspected}\n"
         f"  - final transcript:           \"{clean_text}\""
     )
-    return clean_text, info, diagnostics, engine_used, model_used
+
+    detected_lang = getattr(info, "language", None) or (whisper_lang or "en")
+    stt_log(
+        "transcription_completed",
+        utterance_id,
+        engine=engine_used,
+        model=model_used,
+        detected_language=detected_lang,
+        stt_latency_s=round(time.perf_counter() - stt_started_at, 3),
+        text=clean_text,
+        suspected_hallucination=is_suspected,
+    )
+    return clean_text, info, post_diag, engine_used, model_used
 
 
 # === API Endpoints ===
@@ -355,8 +426,13 @@ async def transcribe_audio(
         "channels": diagnostics.get("channels"),
         "rms_dbfs": diagnostics.get("rms_dbfs"),
         "peak_dbfs": diagnostics.get("peak_dbfs"),
+        "pre_rms_dbfs": diagnostics.get("pre_rms_dbfs"),
+        "gain_db_applied": diagnostics.get("gain_db_applied"),
         "whisper_model": model_used,
-        "transcript": text
+        "transcript": text,
+        "message": diagnostics.get("gate_message", ""),
+        "gate_reason": diagnostics.get("gate_reason"),
+        "suspected_hallucination": diagnostics.get("suspected_hallucination", False),
     }
 
 
@@ -466,7 +542,10 @@ async def full_pipeline(
         raise
     t_stt = time.perf_counter() - t_stt_start
 
-    if not transcript or not any(c.isalnum() for c in transcript):
+    # Fast Short-Circuit on Pre-Flight Silence Gate or Empty Spoken Content:
+    # Immediately returns WITHOUT calling RAG retrieval or LLM translation!
+    if diagnostics.get("is_silent_gate") or not transcript or not any(c.isalnum() for c in transcript):
+        message = diagnostics.get("gate_message") or "No speech detected in audio."
         return {
             "transcript": "",
             "translated_text": "",
@@ -480,7 +559,9 @@ async def full_pipeline(
                 "llm_s": 0.0,
                 "total_s": round(t_stt, 2)
             },
-            "message": "No speech detected in audio.",
+            "message": message,
+            "gate_reason": diagnostics.get("gate_reason"),
+            "suspected_hallucination": False,
             "audio": diagnostics if os.getenv("STT_DEBUG", "false").lower() == "true" else None,
         }
 
@@ -522,6 +603,8 @@ async def full_pipeline(
         },
         "stt_engine": engine_used,
         "stt_model": model_used,
+        "suspected_hallucination": diagnostics.get("suspected_hallucination", False),
+        "gate_reason": None,
         "audio": diagnostics if os.getenv("STT_DEBUG", "false").lower() == "true" else None,
     }
 

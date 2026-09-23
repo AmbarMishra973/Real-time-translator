@@ -82,6 +82,114 @@ def boost_quiet_pcm16_wav(
     target_dbfs: float = -24.0,
     max_gain_db: float = 30.0,
 ) -> tuple[bytes, float]:
-    """Disabled: returns raw audio untouched with 0.0 dB gain to prevent amplifying background noise."""
-    return wav_bytes, 0.0
+    """
+    Adaptive peak-safe gain boost for quiet PCM16 audio.
+    - Preserves true silence (< -60.0 dBFS) to avoid amplifying the room noise floor.
+    - Skips audio already at or above trigger_dbfs (default -38.0 dBFS).
+    - Clamps applied gain so peak + gain never exceeds -1.0 dBFS (guaranteed 1 dB headroom).
+    - Exact byte match returned if no gain is applied.
+    """
+    with wave.open(BytesIO(wav_bytes), "rb") as wav_file:
+        channels = wav_file.getnchannels()
+        sample_width = wav_file.getsampwidth()
+        sample_rate = wav_file.getframerate()
+        frames = wav_file.getnframes()
+        raw_frames = wav_file.readframes(frames)
+
+    if sample_width != 2 or frames == 0:
+        return wav_bytes, 0.0
+
+    samples = array.array("h")
+    samples.frombytes(raw_frames)
+    if sys.byteorder != "little":
+        samples.byteswap()
+
+    peak = max((abs(sample) for sample in samples), default=0)
+    mean_square = sum(sample * sample for sample in samples) / len(samples) if samples else 0.0
+    full_scale = 32768.0
+    rms = math.sqrt(mean_square)
+    rms_dbfs = 20 * math.log10(max(rms / full_scale, 1e-12))
+    peak_dbfs = 20 * math.log10(max(peak / full_scale, 1e-12))
+
+    # True silence: do not amplify room noise floor
+    if rms_dbfs < -60.0:
+        return wav_bytes, 0.0
+
+    # Already sufficiently loud: return unchanged
+    if rms_dbfs >= trigger_dbfs:
+        return wav_bytes, 0.0
+
+    wanted_gain_db = target_dbfs - rms_dbfs
+    max_allowed_by_peak = -1.0 - peak_dbfs  # Ensure 1.0 dB headroom below 0 dBFS
+    gain_db = min(wanted_gain_db, max_gain_db, max_allowed_by_peak)
+    gain_db = max(gain_db, 0.0)
+
+    if gain_db <= 0.01:
+        return wav_bytes, 0.0
+
+    factor = 10.0 ** (gain_db / 20.0)
+    boosted = array.array("h")
+    for s in samples:
+        val = int(round(s * factor))
+        if val > 32767:
+            val = 32767
+        elif val < -32768:
+            val = -32768
+        boosted.append(val)
+
+    if sys.byteorder != "little":
+        boosted.byteswap()
+
+    out_buf = BytesIO()
+    with wave.open(out_buf, "wb") as out_wav:
+        out_wav.setnchannels(channels)
+        out_wav.setsampwidth(sample_width)
+        out_wav.setframerate(sample_rate)
+        out_wav.writeframes(boosted.tobytes())
+
+    return out_buf.getvalue(), round(gain_db, 1)
+
+
+def pad_pcm16_wav(wav_bytes: bytes, pad_ms: int = 250) -> tuple[bytes, float]:
+    """
+    Prepend and append true digital silence (zero samples) to short clips (< 1.0s)
+    to provide temporal context for Whisper phoneme recognition.
+    """
+    with wave.open(BytesIO(wav_bytes), "rb") as in_wav:
+        channels = in_wav.getnchannels()
+        sample_width = in_wav.getsampwidth()
+        sample_rate = in_wav.getframerate()
+        frames = in_wav.getnframes()
+        raw_frames = in_wav.readframes(frames)
+
+    if sample_width != 2:
+        raise ValueError(f"Expected 16-bit PCM WAV, got {sample_width * 8}-bit audio.")
+
+    duration_s = frames / sample_rate if sample_rate else 0.0
+    if duration_s >= 1.0:
+        return wav_bytes, round(duration_s, 3)
+
+    samples = array.array("h")
+    samples.frombytes(raw_frames)
+    if sys.byteorder != "little":
+        samples.byteswap()
+
+    pad_samples_count = int(sample_rate * (pad_ms / 1000.0)) * channels
+    pad_zeros = array.array("h", [0] * pad_samples_count)
+    padded_samples = pad_zeros + samples + pad_zeros
+
+    if sys.byteorder != "little":
+        padded_samples.byteswap()
+
+    out_buf = BytesIO()
+    with wave.open(out_buf, "wb") as out_wav:
+        out_wav.setnchannels(channels)
+        out_wav.setsampwidth(sample_width)
+        out_wav.setframerate(sample_rate)
+        out_wav.writeframes(padded_samples.tobytes())
+
+    total_frames = len(padded_samples) // channels
+    new_duration_s = round(total_frames / sample_rate, 3) if sample_rate else 0.0
+    return out_buf.getvalue(), new_duration_s
+
 

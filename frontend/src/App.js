@@ -273,14 +273,18 @@ function App() {
       const hasSpokenContent = data.transcript && /[a-zA-Z0-9\u0900-\u097F\u4e00-\u9fa5\u0600-\u06FF]/.test(data.transcript);
       if (!hasSpokenContent) {
         setIsProcessing(false);
-        const message = data.message || 'No speech was returned by the STT engine.';
+        const message = data.message || 'No speech detected — please speak closer to the microphone.';
         setSttNotice(message);
         alert(message);
         return;
       }
 
       setTranscribedText(data.transcript);
-      setSttNotice('');
+      if (data.suspected_hallucination) {
+        setSttNotice('Notice: Speech level was low and transcription might be a hallucination. If incorrect, please speak closer to the microphone.');
+      } else {
+        setSttNotice('');
+      }
       setCurrentStep(3);
       setRetrievedChunks(data.retrieved_context || []);
       setSourcesUsed(data.sources_used || []);
