@@ -112,6 +112,18 @@ class PipelineOrchestrator:
                     "llm_ms": 0.0,
                     "total_ms": round(t_stt * 1000, 1)
                 },
+                "ai_observability": {
+                    "retrieval_attempted": False,
+                    "retrieval_hit": False,
+                    "retrieved_count": 0,
+                    "top_retrieval_score": 0.0,
+                    "context_used": False,
+                    "llm_provider": "none",
+                    "fallback_used": False,
+                    "fallback_reason": None,
+                    "source_language": source_lang,
+                    "target_language": target_lang
+                },
                 "message": message,
                 "gate_reason": diagnostics.get("gate_reason"),
                 "suspected_hallucination": False,
@@ -122,7 +134,19 @@ class PipelineOrchestrator:
         t_rag_start = time.perf_counter()
         rag_res = self.rag.retrieve(query=transcript, domain=domain)
         t_rag = time.perf_counter() - t_rag_start
-        pipeline_log("rag_completed", request_id, rag_ms=round(t_rag * 1000, 1), chunks_found=len(rag_res))
+        rag_chunks = rag_res.get("chunks", []) if isinstance(rag_res, dict) else rag_res
+        retrieval_hit = len(rag_chunks) > 0
+        retrieved_count = len(rag_chunks)
+        top_score = rag_chunks[0].get("similarity", 0.0) if retrieval_hit else 0.0
+
+        pipeline_log(
+            "rag_completed",
+            request_id,
+            rag_ms=round(t_rag * 1000, 1),
+            retrieval_hit=retrieval_hit,
+            retrieved_count=retrieved_count,
+            top_score=top_score
+        )
 
         # 3. LLM Translation Stage
         t_llm_start = time.perf_counter()
@@ -139,6 +163,10 @@ class PipelineOrchestrator:
         t_llm = time.perf_counter() - t_llm_start
         t_total = time.perf_counter() - t0
 
+        fallback_used = trans_result.get("fallback_used", False)
+        fallback_reason = trans_result.get("fallback_reason")
+        context_used = trans_result.get("context_used", retrieval_hit)
+
         # Persist to SessionManager
         self.sessions.add_turn(
             session_id=session_id,
@@ -146,7 +174,12 @@ class PipelineOrchestrator:
             translated_text=trans_result.get("translated_text", ""),
             source_lang=source_lang,
             target_lang=target_lang,
-            metadata={"request_id": request_id, "provider": trans_result.get("provider")}
+            metadata={
+                "request_id": request_id,
+                "provider": trans_result.get("provider"),
+                "context_used": context_used,
+                "fallback_used": fallback_used
+            }
         )
 
         pipeline_log(
@@ -154,7 +187,13 @@ class PipelineOrchestrator:
             request_id,
             total_ms=round(t_total * 1000, 1),
             llm_ms=round(t_llm * 1000, 1),
-            provider=trans_result.get("provider")
+            provider=trans_result.get("provider"),
+            retrieval_hit=retrieval_hit,
+            retrieved_count=retrieved_count,
+            top_score=top_score,
+            context_used=context_used,
+            fallback_used=fallback_used,
+            fallback_reason=fallback_reason
         )
 
         return {
@@ -177,6 +216,18 @@ class PipelineOrchestrator:
                 "rag_ms": round(t_rag * 1000, 1),
                 "llm_ms": round(t_llm * 1000, 1),
                 "total_ms": round(t_total * 1000, 1)
+            },
+            "ai_observability": {
+                "retrieval_attempted": True,
+                "retrieval_hit": retrieval_hit,
+                "retrieved_count": retrieved_count,
+                "top_retrieval_score": top_score,
+                "context_used": context_used,
+                "llm_provider": trans_result.get("provider", "none"),
+                "fallback_used": fallback_used,
+                "fallback_reason": fallback_reason,
+                "source_language": source_lang,
+                "target_language": target_lang
             },
             "stt_engine": engine_used,
             "stt_model": model_used,
@@ -221,6 +272,14 @@ class PipelineOrchestrator:
         t_llm = time.perf_counter() - t_llm_start
         t_total = time.perf_counter() - t0
 
+        rag_chunks = rag_res.get("chunks", []) if isinstance(rag_res, dict) else rag_res
+        retrieval_hit = len(rag_chunks) > 0
+        retrieved_count = len(rag_chunks)
+        top_score = rag_chunks[0].get("similarity", 0.0) if retrieval_hit else 0.0
+        fallback_used = result.get("fallback_used", False)
+        fallback_reason = result.get("fallback_reason")
+        context_used = result.get("context_used", retrieval_hit)
+
         # Persist turn
         self.sessions.add_turn(
             session_id=session_id,
@@ -228,7 +287,12 @@ class PipelineOrchestrator:
             translated_text=result.get("translated_text", ""),
             source_lang=source_lang,
             target_lang=target_lang,
-            metadata={"request_id": request_id, "provider": result.get("provider")}
+            metadata={
+                "request_id": request_id,
+                "provider": result.get("provider"),
+                "context_used": context_used,
+                "fallback_used": fallback_used
+            }
         )
 
         result["request_id"] = request_id
@@ -243,7 +307,28 @@ class PipelineOrchestrator:
             "llm_ms": round(t_llm * 1000, 1),
             "total_ms": round(t_total * 1000, 1)
         }
-        pipeline_log("text_translation_completed", request_id, total_ms=round(t_total * 1000, 1))
+        result["ai_observability"] = {
+            "retrieval_attempted": True,
+            "retrieval_hit": retrieval_hit,
+            "retrieved_count": retrieved_count,
+            "top_retrieval_score": top_score,
+            "context_used": context_used,
+            "llm_provider": result.get("provider", "none"),
+            "fallback_used": fallback_used,
+            "fallback_reason": fallback_reason,
+            "source_language": source_lang,
+            "target_language": target_lang
+        }
+        pipeline_log(
+            "text_translation_completed",
+            request_id,
+            total_ms=round(t_total * 1000, 1),
+            retrieval_hit=retrieval_hit,
+            retrieved_count=retrieved_count,
+            top_score=top_score,
+            context_used=context_used,
+            fallback_used=fallback_used
+        )
         return result
 
 

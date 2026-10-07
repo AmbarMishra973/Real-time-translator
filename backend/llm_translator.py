@@ -423,11 +423,16 @@ RECENT CONVERSATION (for pronoun/context resolution):
         text = (text or "").strip()
         if not text or not any(c.isalnum() for c in text):
             return {
+                "source_text": text,
                 "translated_text": "",
                 "retrieved_context": [],
                 "sources_used": [],
                 "provider": "none",
+                "fallback_used": False,
+                "fallback_reason": None,
+                "context_used": False,
                 "latency_s": 0.0,
+                "total_latency_s": 0.0,
                 "history": self.conversation_manager.get_history(session_id)
             }
 
@@ -452,6 +457,8 @@ RECENT CONVERSATION (for pronoun/context resolution):
 
         translated_text = ""
         provider_used = "Local Multilingual Engine"
+        fallback_used = False
+        fallback_reason = None
 
         # 3. LLM Translation
         t_llm_start = time.perf_counter()
@@ -464,9 +471,13 @@ RECENT CONVERSATION (for pronoun/context resolution):
                 print(f"[TRANSLATION_FAILED] engine: 'Groq' error: {e}, falling back to local multi-tier cascade...")
                 translated_text = self._translate_with_fallback(text, source_lang, target_lang, retrieved_items)
                 provider_used = "Local Multilingual Engine"
+                fallback_used = True
+                fallback_reason = str(e)
         else:
             translated_text = self._translate_with_fallback(text, source_lang, target_lang, retrieved_items)
             provider_used = "Local Multilingual Engine"
+            fallback_used = True
+            fallback_reason = "groq_client_not_configured"
         
         llm_latency_s = round(time.perf_counter() - t_llm_start, 2)
         print(f"[TRANSLATION_COMPLETED] engine: '{provider_used}' translated: \"{translated_text}\" (took {llm_latency_s}s)")
@@ -488,6 +499,9 @@ RECENT CONVERSATION (for pronoun/context resolution):
             "retrieved_context": retrieved_items,
             "sources_used": sources_used,
             "provider": provider_used,
+            "fallback_used": fallback_used,
+            "fallback_reason": fallback_reason,
+            "context_used": len(retrieved_items) > 0,
             "latency_s": llm_latency_s,
             "total_latency_s": round(time.perf_counter() - t0, 2),
             "history": self.conversation_manager.get_history(session_id)

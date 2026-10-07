@@ -240,12 +240,28 @@ class StreamingOrchestrator:
                 "gate_reason": diagnostics.get("gate_reason"),
                 "message": gate_msg,
                 "suspected_hallucination": False,
+                "ai_observability": {
+                    "retrieval_attempted": False,
+                    "retrieval_hit": False,
+                    "retrieved_count": 0,
+                    "top_retrieval_score": 0.0,
+                    "context_used": False,
+                    "llm_provider": "none",
+                    "fallback_used": False,
+                    "fallback_reason": None,
+                    "source_language": session.language,
+                    "target_language": session.target_lang
+                }
             }
 
         # 2. RAG Retrieval
         t_rag_start = time.perf_counter()
         rag_res = self.rag.retrieve(query=transcript, domain=session.domain)
         t_rag_s = time.perf_counter() - t_rag_start
+        rag_chunks = rag_res.get("chunks", []) if isinstance(rag_res, dict) else rag_res
+        retrieval_hit = len(rag_chunks) > 0
+        retrieved_count = len(rag_chunks)
+        top_score = rag_chunks[0].get("similarity", 0.0) if retrieval_hit else 0.0
 
         # 3. LLM Translation
         t_llm_start = time.perf_counter()
@@ -262,6 +278,10 @@ class StreamingOrchestrator:
         t_llm_s = time.perf_counter() - t_llm_start
         total_s = time.perf_counter() - t_final_start
 
+        fallback_used = trans_result.get("fallback_used", False)
+        fallback_reason = trans_result.get("fallback_reason")
+        context_used = trans_result.get("context_used", retrieval_hit)
+
         # Persist conversation turn
         self.sessions.add_turn(
             session_id=session.session_id,
@@ -269,7 +289,12 @@ class StreamingOrchestrator:
             translated_text=trans_result.get("translated_text", ""),
             source_lang=session.language,
             target_lang=session.target_lang,
-            metadata={"request_id": session.request_id, "mode": "streaming"}
+            metadata={
+                "request_id": session.request_id,
+                "mode": "streaming",
+                "context_used": context_used,
+                "fallback_used": fallback_used
+            }
         )
 
         stream_log(
@@ -278,7 +303,15 @@ class StreamingOrchestrator:
             transcript=transcript,
             ttfr_ms=ttfr_ms,
             stt_ms=round(t_stt_s * 1000, 1),
-            total_ms=round(total_s * 1000, 1)
+            rag_ms=round(t_rag_s * 1000, 1),
+            llm_ms=round(t_llm_s * 1000, 1),
+            total_ms=round(total_s * 1000, 1),
+            retrieval_hit=retrieval_hit,
+            retrieved_count=retrieved_count,
+            top_score=top_score,
+            context_used=context_used,
+            provider=trans_result.get("provider"),
+            fallback_used=fallback_used
         )
 
         return {
@@ -298,6 +331,18 @@ class StreamingOrchestrator:
                 "rag_ms": round(t_rag_s * 1000, 1),
                 "llm_ms": round(t_llm_s * 1000, 1),
                 "total_ms": round(total_s * 1000, 1),
+            },
+            "ai_observability": {
+                "retrieval_attempted": True,
+                "retrieval_hit": retrieval_hit,
+                "retrieved_count": retrieved_count,
+                "top_retrieval_score": top_score,
+                "context_used": context_used,
+                "llm_provider": trans_result.get("provider", "none"),
+                "fallback_used": fallback_used,
+                "fallback_reason": fallback_reason,
+                "source_language": session.language,
+                "target_language": session.target_lang
             },
             "stt_engine": engine_used,
             "stt_model": model_used,
