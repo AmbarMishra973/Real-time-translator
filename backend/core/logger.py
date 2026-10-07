@@ -42,3 +42,17 @@ def pipeline_log(event: str, request_id: str, **fields: Any) -> None:
         **fields
     }
     print("[PIPELINE] " + json.dumps(payload, ensure_ascii=False, default=str), flush=True)
+
+
+def stream_log(event: str, request_id: str, **fields: Any) -> None:
+    """
+    Emit structured streaming WebSocket tracing events.
+    """
+    payload = {
+        "subsystem": "STREAM",
+        "event": event,
+        "request_id": request_id,
+        **fields
+    }
+    print("[STREAM] " + json.dumps(payload, ensure_ascii=False, default=str), flush=True)
+
