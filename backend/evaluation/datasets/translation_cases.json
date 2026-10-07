@@ -1,0 +1,222 @@
+[
+  {
+    "id": "trans_001",
+    "source_text": "Hello, how are you?",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "conversational_short",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_002",
+    "source_text": "Good morning, welcome to our office.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "conversational_short",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_003",
+    "source_text": "The web server returned HTTP 404 error code.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "technical_terms_numbers",
+    "expected_numbers": ["404"],
+    "expected_entities": [],
+    "expected_technical_terms": [["HTTP"], ["server", "सर्वर"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_004",
+    "source_text": "We deployed the backend service using Docker containers and Kubernetes.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "technical_terms",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [["Docker", "डॉकर"], ["Kubernetes", "कुबेरनेट्स"], ["containers", "कंटेनर"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_005",
+    "source_text": "Every database transaction must have an authentication token and valid API key.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "technical_terms",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [["API", "एपीआई"], ["token", "टोकन"], ["database", "डेटाबेस"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_006",
+    "source_text": "Amit Sharma works at Microsoft headquarters in Seattle.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "named_entities",
+    "expected_numbers": [],
+    "expected_entities": [["Amit", "अमित"], ["Sharma", "शर्मा"], ["Microsoft", "माइक्रोसॉफ्ट"], ["Seattle", "सिएटल"]],
+    "expected_technical_terms": [],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_007",
+    "source_text": "Patient blood pressure is measured at 130/80 mmHg.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "numbers_medical",
+    "expected_numbers": ["130/80"],
+    "expected_entities": [],
+    "expected_technical_terms": [["mmHg"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_008",
+    "source_text": "The project deadline is on October 12, 2026.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "dates_numbers",
+    "expected_numbers": ["12", "2026"],
+    "expected_entities": [["October", "अक्टूबर"]],
+    "expected_technical_terms": [],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_009",
+    "source_text": "The microservices architecture reduces round-trip latency to 45 ms.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "technical_numbers",
+    "expected_numbers": ["45"],
+    "expected_entities": [],
+    "expected_technical_terms": [["microservices", "माइक्रोसर्विस", "माइक्रोसर्विसेज"], ["latency", "विलंबता", "लेटेंसी"], ["ms", "मिलीसेकंड", "एमएस"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_010",
+    "source_text": "कृपया सर्वर को पुनः आरंभ करें और लॉग फ़ाइल की जांच करें।",
+    "source_lang": "hi",
+    "target_lang": "en",
+    "category": "hindi_to_english",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [["server"], ["log"]],
+    "target_script": "latin"
+  },
+  {
+    "id": "trans_011",
+    "source_text": "हमारा उद्देश्य रीयल-टाइम AI अनुवाद की विश्वसनीयता को बढ़ाना है।",
+    "source_lang": "hi",
+    "target_lang": "en",
+    "category": "hindi_to_english",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [["AI"], ["translation", "translate"]],
+    "target_script": "latin"
+  },
+  {
+    "id": "trans_012",
+    "source_text": "The application processed 2500 requests per second across 4 clusters.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "numbers_technical",
+    "expected_numbers": ["2500", "4"],
+    "expected_entities": [],
+    "expected_technical_terms": [["requests", "अनुरोध"], ["clusters", "क्लस्टर", "समूहों"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_013",
+    "source_text": "Can you provide a clear diagnosis and written prescription for the outpatient?",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "medical_domain",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [["diagnosis", "निदान"], ["prescription", "नुस्खा", "पर्चे"], ["outpatient", "आउट पेशेंट"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_014",
+    "source_text": "The startup had a monthly burn rate of 50000 dollars before raising Series A.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "business_numbers",
+    "expected_numbers": ["50000"],
+    "expected_entities": [["Series A", "श्रृंखला A"]],
+    "expected_technical_terms": [["burn rate", "जलने की दर", "बर्न रेट"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_015",
+    "source_text": "REST API endpoints must always return JSON format with UTF-8 encoding.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "technical_mixed",
+    "expected_numbers": ["8"],
+    "expected_entities": [],
+    "expected_technical_terms": [["REST API"], ["JSON"], ["UTF"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_016",
+    "source_text": "What is your name?",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "conversational_short",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_017",
+    "source_text": "मेरा नाम राहुल है और मैं भोपाल में रहता हूँ।",
+    "source_lang": "hi",
+    "target_lang": "en",
+    "category": "named_entities_hi_en",
+    "expected_numbers": [],
+    "expected_entities": [["Rahul"], ["Bhopal"]],
+    "expected_technical_terms": [],
+    "target_script": "latin"
+  },
+  {
+    "id": "trans_018",
+    "source_text": "During Sprint planning, all stakeholders agreed on the key deliverables for Q3.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "business_mixed",
+    "expected_numbers": [],
+    "expected_entities": [["Q3"]],
+    "expected_technical_terms": [["Sprint", "स्प्रिंट"], ["stakeholders", "हितधारक"], ["deliverables", "डिलिवरेबल्स"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_019",
+    "source_text": "Retrieval-Augmented Generation combines TF-IDF indexing with LLM generation.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "technical_terms",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [["TF", "IDF"], ["LLM"]],
+    "target_script": "devanagari"
+  },
+  {
+    "id": "trans_020",
+    "source_text": "The patient showed severe symptoms of chronic disease and contraindication to antibiotics.",
+    "source_lang": "en",
+    "target_lang": "hi",
+    "category": "medical_complex",
+    "expected_numbers": [],
+    "expected_entities": [],
+    "expected_technical_terms": [["chronic disease", "पुरानी बीमारी"], ["contraindication", "मतभेद", "कंट्राइंडिकेशन"]],
+    "target_script": "devanagari"
+  }
+]

@@ -1,0 +1,302 @@
+[
+  {
+    "id": "rag_001",
+    "query": "What is a Vector Database?",
+    "category": "factual",
+    "domain": "all",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["Vector Database"],
+    "relevant_terms": ["vector embeddings", "similarity search", "Cosine Similarity", "FAISS"],
+    "answerable": true
+  },
+  {
+    "id": "rag_002",
+    "query": "How does RAG Architecture work in generative AI?",
+    "category": "factual",
+    "domain": "all",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["RAG Architecture", "RAG"],
+    "relevant_terms": ["retrieval systems", "vector databases", "hallucinations"],
+    "answerable": true
+  },
+  {
+    "id": "rag_003",
+    "query": "Define hypertension and what blood pressure reading indicates it.",
+    "category": "factual",
+    "domain": "medical",
+    "expected_sources": ["medical_terms.txt"],
+    "expected_terms": ["Hypertension"],
+    "relevant_terms": ["blood pressure", "130/80 mmHg"],
+    "answerable": true
+  },
+  {
+    "id": "rag_004",
+    "query": "What is ROI and how is it used in business?",
+    "category": "factual",
+    "domain": "business",
+    "expected_sources": ["business_terms.txt"],
+    "expected_terms": ["ROI"],
+    "relevant_terms": ["Return on Investment", "profitability"],
+    "answerable": true
+  },
+  {
+    "id": "rag_005",
+    "query": "How does Kubernetes automate container management?",
+    "category": "factual",
+    "domain": "technical",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["Kubernetes"],
+    "relevant_terms": ["container orchestration", "K8s", "deployment"],
+    "answerable": true
+  },
+  {
+    "id": "rag_006",
+    "query": "What is Docker and how does it package software?",
+    "category": "factual",
+    "domain": "all",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["Docker"],
+    "relevant_terms": ["containers", "virtualization"],
+    "answerable": true
+  },
+  {
+    "id": "rag_007",
+    "query": "Explain what a Sprint means in software development.",
+    "category": "factual",
+    "domain": "business",
+    "expected_sources": ["business_terms.txt"],
+    "expected_terms": ["Sprint"],
+    "relevant_terms": ["Agile", "1 to 4 weeks"],
+    "answerable": true
+  },
+  {
+    "id": "rag_008",
+    "query": "Where can we store high-dimensional embeddings for similarity search?",
+    "category": "paraphrase",
+    "domain": "all",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["Vector Database"],
+    "relevant_terms": ["high-dimensional", "embeddings", "similarity search"],
+    "answerable": true
+  },
+  {
+    "id": "rag_009",
+    "query": "Procedure for determining the urgency and order of emergency patients.",
+    "category": "paraphrase",
+    "domain": "medical",
+    "expected_sources": ["medical_terms.txt"],
+    "expected_terms": ["Triage"],
+    "relevant_terms": ["urgency", "order of treatment", "casualties"],
+    "answerable": true
+  },
+  {
+    "id": "rag_010",
+    "query": "The rate at which a startup exhausts its cash reserves.",
+    "category": "paraphrase",
+    "domain": "business",
+    "expected_sources": ["business_terms.txt"],
+    "expected_terms": ["Burn Rate"],
+    "relevant_terms": ["spends", "venture capital", "cash reserves"],
+    "answerable": true
+  },
+  {
+    "id": "rag_011",
+    "query": "Uncontrolled expansion in project requirements without adding budget.",
+    "category": "paraphrase",
+    "domain": "business",
+    "expected_sources": ["business_terms.txt"],
+    "expected_terms": ["Scope Creep"],
+    "relevant_terms": ["scope", "requirements", "time, cost, and resources"],
+    "answerable": true
+  },
+  {
+    "id": "rag_012",
+    "query": "High speed temporary storage layer used to serve repeated queries faster.",
+    "category": "paraphrase",
+    "domain": "technical",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["Caching"],
+    "relevant_terms": ["transient data", "storage layer", "faster"],
+    "answerable": true
+  },
+  {
+    "id": "rag_013",
+    "query": "What is an API and why is it used?",
+    "category": "technical",
+    "domain": "technical",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["API"],
+    "relevant_terms": ["Application Programming Interface", "protocols"],
+    "answerable": true
+  },
+  {
+    "id": "rag_014",
+    "query": "Tell me about CI/CD pipelines and automated testing.",
+    "category": "technical",
+    "domain": "technical",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["CI/CD"],
+    "relevant_terms": ["Continuous Integration", "Continuous Deployment", "pipelines"],
+    "answerable": true
+  },
+  {
+    "id": "rag_015",
+    "query": "What are microservices architectures?",
+    "category": "technical",
+    "domain": "all",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["Microservices"],
+    "relevant_terms": ["autonomous", "loosely coupled", "services"],
+    "answerable": true
+  },
+  {
+    "id": "rag_016",
+    "query": "What does LLM Context refer to during inference?",
+    "category": "technical",
+    "domain": "technical",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["LLM Context"],
+    "relevant_terms": ["context window", "token budget", "grounding"],
+    "answerable": true
+  },
+  {
+    "id": "rag_017",
+    "query": "How is latency measured in audio streaming applications?",
+    "category": "technical",
+    "domain": "technical",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["Latency"],
+    "relevant_terms": ["delay", "milliseconds", "ms"],
+    "answerable": true
+  },
+  {
+    "id": "rag_018",
+    "query": "Docker कंटेनर तकनीक क्या है और यह कैसे काम करती है?",
+    "category": "multilingual",
+    "domain": "all",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["Docker"],
+    "relevant_terms": ["containers", "virtualization"],
+    "answerable": true
+  },
+  {
+    "id": "rag_019",
+    "query": "RAG और Vector Database का उपयोग क्यों करते हैं?",
+    "category": "multilingual",
+    "domain": "all",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["RAG", "Vector Database"],
+    "relevant_terms": ["embeddings", "retrieval"],
+    "answerable": true
+  },
+  {
+    "id": "rag_020",
+    "query": "रोगी के लिए Hypertension और रक्तचाप का क्या अर्थ है?",
+    "category": "multilingual",
+    "domain": "medical",
+    "expected_sources": ["medical_terms.txt"],
+    "expected_terms": ["Hypertension"],
+    "relevant_terms": ["blood pressure", "130/80"],
+    "answerable": true
+  },
+  {
+    "id": "rag_021",
+    "query": "Who was the first president of the United States?",
+    "category": "no_answer",
+    "domain": "all",
+    "expected_sources": [],
+    "expected_terms": [],
+    "relevant_terms": [],
+    "answerable": false
+  },
+  {
+    "id": "rag_022",
+    "query": "What is the boiling point of liquid nitrogen in Celsius?",
+    "category": "no_answer",
+    "domain": "all",
+    "expected_sources": [],
+    "expected_terms": [],
+    "relevant_terms": [],
+    "answerable": false
+  },
+  {
+    "id": "rag_023",
+    "query": "Give me a recipe for baking sourdough bread at home.",
+    "category": "no_answer",
+    "domain": "all",
+    "expected_sources": [],
+    "expected_terms": [],
+    "relevant_terms": [],
+    "answerable": false
+  },
+  {
+    "id": "rag_024",
+    "query": "How many moons does Jupiter have?",
+    "category": "no_answer",
+    "domain": "all",
+    "expected_sources": [],
+    "expected_terms": [],
+    "relevant_terms": [],
+    "answerable": false
+  },
+  {
+    "id": "rag_025",
+    "query": "What is the capital city of France?",
+    "category": "no_answer",
+    "domain": "all",
+    "expected_sources": [],
+    "expected_terms": [],
+    "relevant_terms": [],
+    "answerable": false
+  },
+  {
+    "id": "rag_026",
+    "query": "How do we define individual availability and team capacity for new tasks?",
+    "category": "similar_topic",
+    "domain": "business",
+    "expected_sources": ["business_terms.txt"],
+    "expected_terms": ["Bandwidth"],
+    "relevant_terms": ["capacity", "availability", "responsibilities"],
+    "answerable": true
+  },
+  {
+    "id": "rag_027",
+    "query": "Formal meeting held every three months to evaluate targets and performance.",
+    "category": "similar_topic",
+    "domain": "business",
+    "expected_sources": ["business_terms.txt"],
+    "expected_terms": ["Quarterly Review"],
+    "relevant_terms": ["three months", "financial performance"],
+    "answerable": true
+  },
+  {
+    "id": "rag_028",
+    "query": "What medical term describes blood pressure reading exceeding 130/80 mmHg?",
+    "category": "numeric_entity",
+    "domain": "medical",
+    "expected_sources": ["medical_terms.txt"],
+    "expected_terms": ["Hypertension"],
+    "relevant_terms": ["130/80 mmHg", "blood pressure"],
+    "answerable": true
+  },
+  {
+    "id": "rag_029",
+    "query": "Which database indexes embeddings using Cosine Similarity, Chroma, and Pinecone?",
+    "category": "numeric_entity",
+    "domain": "technical",
+    "expected_sources": ["technical_terms.txt"],
+    "expected_terms": ["Vector Database"],
+    "relevant_terms": ["Cosine Similarity", "Chroma", "Pinecone", "FAISS"],
+    "answerable": true
+  },
+  {
+    "id": "rag_030",
+    "query": "An Agile work cycle typically lasting 1 to 4 weeks.",
+    "category": "numeric_entity",
+    "domain": "business",
+    "expected_sources": ["business_terms.txt"],
+    "expected_terms": ["Sprint"],
+    "relevant_terms": ["1 to 4 weeks", "Agile"],
+    "answerable": true
+  }
+]
