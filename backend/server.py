@@ -291,8 +291,9 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Op
 
     stt_log("audio_validated", utterance_id, input_bytes=len(audio_bytes), input_container=input_suffix, input_content_type=content_type, capture_metadata=capture_metadata or {}, normalized_bytes=len(wav_bytes), source_language=whisper_lang or "auto", **post_diag)
 
-    # 5. Whisper Transcription (Groq LPU primary, Local Faster-Whisper fallback)
-    if llm_translator._groq_client:
+    # 5. Whisper Transcription (Local Faster-Whisper primary zero-cost engine; Groq optional)
+    prefer_groq = os.getenv("STT_ENGINE", "local").lower() == "groq" and bool(llm_translator._groq_client)
+    if prefer_groq:
         engine_used = "groq"
         model_used = "whisper-large-v3-turbo"
         stt_log("transcription_started", utterance_id, engine=engine_used, model=model_used, source_language=whisper_lang or "auto")
@@ -301,10 +302,23 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Op
             info = SimpleNamespace(language=whisper_lang or "en", language_probability=1.0, language_source="groq")
         except Exception as e:
             stt_log("groq_failed", utterance_id, error=str(e))
-            raise HTTPException(status_code=502, detail=f"Groq Whisper failed: {e}")
+            if whisper_model is not None:
+                # Graceful fallback to local Faster-Whisper if cloud API fails
+                engine_used = "local"
+                model_used = WHISPER_SIZE
+                segments, info = whisper_model.transcribe(
+                    io.BytesIO(wav_bytes),
+                    language=whisper_lang,
+                    beam_size=1,
+                    temperature=0.0,
+                    vad_filter=False,
+                )
+                clean_text = ' '.join(seg.text for seg in segments).strip()
+            else:
+                raise HTTPException(status_code=502, detail=f"Groq Whisper failed: {e}")
     else:
         if whisper_model is None:
-            raise RuntimeError("No STT engine is available. Configure Groq or install/cache the configured Faster-Whisper model.")
+            raise RuntimeError("No local Whisper model is available. Check WhisperModel installation/weights.")
 
         engine_used = "local"
         model_used = WHISPER_SIZE
