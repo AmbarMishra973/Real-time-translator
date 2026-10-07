@@ -59,6 +59,10 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [groqKeyInput, setGroqKeyInput] = useState(localStorage.getItem('groq_api_key') || '');
 
+  // Phase 3 Streaming Additions
+  const [streamingMode, setStreamingMode] = useState(false);
+  const [partialTranscript, setPartialTranscript] = useState('');
+
   // Refs
   const mediaStreamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -66,6 +70,7 @@ function App() {
   const captureMetadataRef = useRef({});
   const timerRef = useRef(null);
   const activeResultRequestIdRef = useRef(0);
+  const wsRef = useRef(null);
 
   // Check LLM status from backend on mount
   const checkBackendStatus = useCallback(async () => {
@@ -125,6 +130,7 @@ function App() {
     setSttNotice('');
     setTranscribedText('');
     setTranslatedText('');
+    setPartialTranscript('');
     setRetrievedChunks([]);
     setSourcesUsed([]);
     setProviderLabel('');
@@ -164,15 +170,79 @@ function App() {
       mediaRecorderRef.current = new MediaRecorder(stream, options);
       audioChunksRef.current = [];
 
+      // Initialize WebSocket connection if streamingMode is active
+      if (streamingMode) {
+        try {
+          const wsUrl = BACKEND_URL.replace(/^http/, 'ws') + '/ws/transcribe';
+          const ws = new WebSocket(wsUrl);
+          wsRef.current = ws;
+
+          ws.onopen = () => {
+            ws.send(JSON.stringify({
+              type: 'start',
+              session_id: sessionId,
+              language: sourceLang,
+              target_lang: targetLang
+            }));
+          };
+
+          ws.onmessage = (event) => {
+            try {
+              const msg = JSON.parse(event.data);
+              if (msg.type === 'partial') {
+                setPartialTranscript(msg.text);
+              } else if (msg.type === 'final') {
+                setTranscribedText(msg.transcript);
+                setTranslatedText(msg.translated_text || msg.translated || '');
+                setRetrievedChunks(msg.retrieved_context || []);
+                setSourcesUsed(msg.sources_used || []);
+                setProviderLabel(msg.provider || 'local');
+                setMetrics({
+                  stt_s: msg.metrics?.stt_ms ? (msg.metrics.stt_ms / 1000) : null,
+                  rag_s: msg.metrics?.rag_ms ? (msg.metrics.rag_ms / 1000) : null,
+                  llm_s: msg.metrics?.llm_ms ? (msg.metrics.llm_ms / 1000) : null,
+                  tts_s: null,
+                  total_s: msg.metrics?.total_ms ? (msg.metrics.total_ms / 1000) : null,
+                });
+                setPartialTranscript('');
+                setIsProcessing(false);
+                setCurrentStep(4);
+              } else if (msg.type === 'cancelled') {
+                setPartialTranscript('');
+                setIsProcessing(false);
+                setSttNotice('Stream cancelled.');
+              }
+            } catch (err) {
+              console.warn('WS message error:', err);
+            }
+          };
+
+          ws.onerror = (e) => {
+            console.warn('WS error, fallback to REST on stop:', e);
+          };
+        } catch (wsErr) {
+          console.warn('Could not initialize WebSocket, using REST:', wsErr);
+        }
+      }
+
       mediaRecorderRef.current.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
           audioChunksRef.current.push(e.data);
+          if (streamingMode && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(e.data);
+          }
         }
       };
 
       mediaRecorderRef.current.onstop = async () => {
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        }
+
+        if (streamingMode && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          setIsProcessing(true);
+          wsRef.current.send(JSON.stringify({ type: 'end' }));
+          return;
         }
 
         const finalType = (mediaRecorderRef.current && mediaRecorderRef.current.mimeType) || 'audio/webm';
@@ -188,8 +258,8 @@ function App() {
         await executeAudioPipeline(blob, { ...captureMetadataRef.current, mimeType: finalType });
       };
 
-      // Record full continuous stream without timeslice slicing to prevent fragmented WebM clusters
-      mediaRecorderRef.current.start();
+      // Record continuous stream or windowed timeslices if streamingMode
+      mediaRecorderRef.current.start(streamingMode ? 250 : undefined);
       setRecording(true);
       setRecordSeconds(0);
       setCurrentStep(1);
@@ -212,6 +282,27 @@ function App() {
     }
     setRecording(false);
     setCurrentStep(2);
+  };
+
+  // Cancel Streaming Turn
+  const cancelRecording = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'cancel' }));
+      try { wsRef.current.close(); } catch (e) {}
+      wsRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    setRecording(false);
+    setIsProcessing(false);
+    setPartialTranscript('');
+    setSttNotice('Recording cancelled.');
   };
 
   // Client-side translation resolver: Guarantees translation correctness even under cloud server 429 rate-limits
@@ -563,17 +654,34 @@ function App() {
                 🎤
               </button>
             ) : (
-              <button className="record-btn-compact recording" onClick={stopRecording} title="Stop & Process">
-                ⏹
-              </button>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <button className="record-btn-compact recording" onClick={stopRecording} title="Stop & Process">
+                  ⏹
+                </button>
+                <button className="cancel-btn-compact" onClick={cancelRecording} title="Cancel recording turn">
+                  ❌
+                </button>
+              </div>
             )}
             <div className="record-status-text">
               {recording
-                ? `🎙️ Recording audio (${recordSeconds}s)... Click ⏹ to transcribe`
+                ? `🎙️ ${streamingMode ? 'Streaming audio via WebSocket' : 'Recording audio'} (${recordSeconds}s)... Click ⏹ to finish`
                 : isProcessing
                   ? (currentStep === 2 ? '⏳ Transcribing audio (Whisper STT)...' : currentStep === 3 ? '🔍 Retrieving domain context (RAG)...' : currentStep === 4 ? '🌐 Translating transcript...' : '⚡ Processing...')
                   : (sttNotice || (translatedText ? '✅ Translation complete. Click mic or type to translate again.' : 'Click mic to record with AI speech recognition, or type directly in the box below'))}
+              {partialTranscript && (
+                <div className="partial-live-text">⚡ Live recognition: "{partialTranscript}"</div>
+              )}
             </div>
+            <label className="streaming-toggle-label" title="Toggle WebSocket streaming mode">
+              <input
+                type="checkbox"
+                checked={streamingMode}
+                onChange={(e) => setStreamingMode(e.target.checked)}
+                disabled={recording}
+              />
+              Live Stream (WS)
+            </label>
           </div>
 
           {/* Transcript Area */}
