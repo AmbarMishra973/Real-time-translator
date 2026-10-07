@@ -22,6 +22,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routes.pipeline_routes import router as pipeline_router
+from backend.routes.websocket_routes import router as websocket_router
 from backend.services.stt_service import stt_service, convert_to_clean_wav, parse_capture_metadata
 from backend.services.rag_service import rag_service
 from backend.services.llm_service import llm_service
@@ -90,78 +91,10 @@ def root():
     }
 
 
-# === Mount Pipeline Routes ===
+# === Mount Application Routers ===
 app.include_router(pipeline_router)
+app.include_router(websocket_router)
 
-
-# === Auxiliary Audio Format Helper for WebSockets ===
-
-def pcm16_to_wav_bytes(pcm16_bytes: bytes, rate: int = 16000) -> bytes:
-    import wave
-    buf = io.BytesIO()
-    with wave.open(buf, 'wb') as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(rate)
-        wf.writeframes(pcm16_bytes)
-    return buf.getvalue()
-
-
-# === WebSocket Live Transcription (Deferred to Phase 3) ===
-
-@app.websocket("/ws/transcribe")
-async def websocket_transcribe(websocket: WebSocket):
-    if os.getenv("ENABLE_EXPERIMENTAL_WEBSOCKET", "false").lower() != "true":
-        await websocket.close(code=1008, reason="Experimental streaming STT is disabled; use /pipeline.")
-        return
-    if stt_service.model is None:
-        await websocket.close(code=1011, reason="No local Whisper model is available.")
-        return
-    await websocket.accept()
-    buffer = bytearray()
-    print("\n[+] Microphone connected via WebSocket.", flush=True)
-
-    try:
-        while True:
-            data = await websocket.receive_bytes()
-            buffer.extend(data)
-
-            # Transcribe when ~1 sec of 16kHz 16-bit mono audio is accumulated
-            if len(buffer) >= 32000:
-                chunk = buffer[:32000]
-                buffer = buffer[32000:]
-                wav_data = pcm16_to_wav_bytes(chunk)
-
-                def transcribe_ws_chunk(wav_bytes):
-                    segments, info = stt_service.model.transcribe(
-                        io.BytesIO(wav_bytes),
-                        beam_size=1,
-                        vad_filter=False,
-                        condition_on_previous_text=False,
-                        language=None
-                    )
-                    return ' '.join([s.text for s in segments]).strip(), info
-
-                text, info = await asyncio.to_thread(transcribe_ws_chunk, wav_data)
-
-                if text:
-                    print(f"-> Whisper heard: '{text}'", flush=True)
-                    retrieved = rag_service.retrieve(text, top_k=2)
-                    await websocket.send_json({
-                        "text": text,
-                        "detected_lang": info.language,
-                        "confidence": round(info.language_probability, 2),
-                        "retrieved_context": retrieved
-                    })
-
-    except WebSocketDisconnect:
-        print("[-] WebSocket client disconnected.", flush=True)
-    except Exception as e:
-        print(f"[!] WebSocket Error: {str(e)}", flush=True)
-        try:
-            await websocket.send_json({"error": str(e)})
-        except Exception:
-            pass
 
 
 if __name__ == "__main__":
