@@ -65,7 +65,7 @@ async def global_exception_handler(request, exc):
 
 
 # === Initialize Whisper Model ===
-WHISPER_SIZE = os.getenv("WHISPER_SIZE", "small")
+WHISPER_SIZE = os.getenv("WHISPER_SIZE", "base")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 print(f"[*] Initializing Faster-Whisper ({WHISPER_SIZE} on {WHISPER_DEVICE})...")
