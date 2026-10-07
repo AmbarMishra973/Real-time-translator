@@ -1,0 +1,275 @@
+{
+  "total_cases": 20,
+  "passed_cases": 20,
+  "overall_pass_rate": 1.0,
+  "criteria_breakdown": {
+    "non_empty": "20/20 (100.0%)",
+    "numbers_preserved": "20/20 (100.0%)",
+    "terms_preserved": "20/20 (100.0%)",
+    "entities_preserved": "20/20 (100.0%)",
+    "script_sanity": "20/20 (100.0%)"
+  },
+  "average_latency_ms": 1239.2,
+  "case_results": [
+    {
+      "id": "trans_001",
+      "source_text": "Hello, how are you?",
+      "translated_text": "हैलो, आप कैसे हैं?",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_002",
+      "source_text": "Good morning, welcome to our office.",
+      "translated_text": "सुप्रभात, हमारे कार्यालय में आपका स्वागत है।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_003",
+      "source_text": "The web server returned HTTP 404 error code.",
+      "translated_text": "वेब सर्वर ने HTTP 404 त्रुटि कोड लौटाया।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_004",
+      "source_text": "We deployed the backend service using Docker containers and Kubernetes.",
+      "translated_text": "हमने डॉकर कंटेनरों और कुबेरनेट्स का उपयोग करके बैकएंड सेवा को तैनात किया।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_005",
+      "source_text": "Every database transaction must have an authentication token and valid API key.",
+      "translated_text": "हर डेटाबेस लेनदेन में एक प्रमाणीकरण टोकन और मान्य एपीआई कुंजी होनी चाहिए।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_006",
+      "source_text": "Amit Sharma works at Microsoft headquarters in Seattle.",
+      "translated_text": "अमित शर्मा सिएटल में माइक्रोसॉफ्ट मुख्यालय में काम करते हैं।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_007",
+      "source_text": "Patient blood pressure is measured at 130/80 mmHg.",
+      "translated_text": "रोगी का रक्तचाप 130/80 mmHg मापा जाता है।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_008",
+      "source_text": "The project deadline is on October 12, 2026.",
+      "translated_text": "प्रोजेक्ट की समय सीमा 12 अक्टूबर, 2026 है।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_009",
+      "source_text": "The microservices architecture reduces round-trip latency to 45 ms.",
+      "translated_text": "माइक्रोसर्विसेज आर्किटेक्चर राउंड - ट्रिप लेटेंसी को 45 एमएस तक कम कर देता है।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_010",
+      "source_text": "कृपया सर्वर को पुनः आरंभ करें और लॉग फ़ाइल की जांच करें।",
+      "translated_text": "Please restart the server and check the log file.",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_011",
+      "source_text": "हमारा उद्देश्य रीयल-टाइम AI अनुवाद की विश्वसनीयता को बढ़ाना है।",
+      "translated_text": "We aim to increase the reliability of real-time AI translation.",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_012",
+      "source_text": "The application processed 2500 requests per second across 4 clusters.",
+      "translated_text": "एप्लिकेशन ने 4 समूहों में प्रति सेकंड 2500 अनुरोधों को संसाधित किया।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_013",
+      "source_text": "Can you provide a clear diagnosis and written prescription for the outpatient?",
+      "translated_text": "क्या आप आउट पेशेंट के लिए एक स्पष्ट निदान और लिखित नुस्खा प्रदान कर सकते हैं?",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_014",
+      "source_text": "The startup had a monthly burn rate of 50000 dollars before raising Series A.",
+      "translated_text": "श्रृंखला A को बढ़ाने से पहले स्टार्टअप की मासिक जलने की दर 50000 डॉलर थी।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_015",
+      "source_text": "REST API endpoints must always return JSON format with UTF-8 encoding.",
+      "translated_text": "REST API एंडपॉइंट्स को हमेशा UTF -8 एन्कोडिंग के साथ JSON फॉर्मेट वापस करना चाहिए।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_016",
+      "source_text": "What is your name?",
+      "translated_text": "आपका नाम क्या है?",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_017",
+      "source_text": "मेरा नाम राहुल है और मैं भोपाल में रहता हूँ।",
+      "translated_text": "My name is Rahul and I live in Bhopal.",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_018",
+      "source_text": "During Sprint planning, all stakeholders agreed on the key deliverables for Q3.",
+      "translated_text": "स्प्रिंट प्लानिंग के दौरान, सभी हितधारक Q3 के लिए प्रमुख डिलिवरेबल्स पर सहमत हुए।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_019",
+      "source_text": "Retrieval-Augmented Generation combines TF-IDF indexing with LLM generation.",
+      "translated_text": "रिट्रीवल - ऑगमेंटेड जनरेशन TF - IDF इंडेक्सिंग को LLM जनरेशन के साथ जोड़ती है।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    },
+    {
+      "id": "trans_020",
+      "source_text": "The patient showed severe symptoms of chronic disease and contraindication to antibiotics.",
+      "translated_text": "रोगी ने पुरानी बीमारी और एंटीबायोटिक दवाओं के लिए मतभेद के गंभीर लक्षण दिखाए।",
+      "passed": true,
+      "checks": {
+        "non_empty": true,
+        "numbers_preserved": true,
+        "terms_preserved": true,
+        "entities_preserved": true,
+        "script_sanity": true
+      }
+    }
+  ]
+}

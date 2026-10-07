@@ -1,0 +1,22 @@
+{
+  "total_cases": 30,
+  "answerable_cases": 25,
+  "no_answer_cases": 5,
+  "hit_at_1": 1.0,
+  "hit_at_1_count": "25/25",
+  "hit_at_3": 1.0,
+  "hit_at_3_count": "25/25",
+  "hit_at_5": 1.0,
+  "hit_at_5_count": "25/25",
+  "mrr": 1.0,
+  "recall_at_5": 1.0,
+  "no_answer_accuracy": 1.0,
+  "no_answer_count": "5/5",
+  "latency": {
+    "avg_ms": 9.58,
+    "p50_ms": 6.5,
+    "p95_ms": 24.92
+  },
+  "failure_summary": {},
+  "failures": []
+}
