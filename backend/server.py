@@ -306,12 +306,15 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Op
                 # Graceful fallback to local Faster-Whisper if cloud API fails
                 engine_used = "local"
                 model_used = WHISPER_SIZE
+                initial_prompt = "यह हिंदी में बातचीत है।" if whisper_lang == "hi" else None
                 segments, info = whisper_model.transcribe(
                     io.BytesIO(wav_bytes),
                     language=whisper_lang,
                     beam_size=1,
                     temperature=0.0,
                     vad_filter=False,
+                    condition_on_previous_text=False,
+                    initial_prompt=initial_prompt,
                 )
                 clean_text = ' '.join(seg.text for seg in segments).strip()
             else:
@@ -324,12 +327,17 @@ def sync_transcribe(audio_bytes: bytes, lang: Optional[str] = None, filename: Op
         model_used = WHISPER_SIZE
         stt_log("transcription_started", utterance_id, engine=engine_used, model=model_used, source_language=whisper_lang or "auto")
 
+        # Guide Devanagari script tokenization for Hindi to prevent Urdu Perso-Arabic transcription
+        initial_prompt = "यह हिंदी में बातचीत है।" if whisper_lang == "hi" else None
+
         segments, info = whisper_model.transcribe(
             io.BytesIO(wav_bytes),
             language=whisper_lang,
             beam_size=1,
             temperature=0.0,
             vad_filter=False,
+            condition_on_previous_text=False,
+            initial_prompt=initial_prompt,
         )
         clean_text = ' '.join(seg.text for seg in segments).strip()
         if info is None:
