@@ -143,7 +143,9 @@ class RAGEngine:
         query_vec = self.vectorizer.transform([query])
         raw_similarities = cosine_similarity(query_vec, self.tfidf_matrix).flatten()
 
-        query_words = set(re.findall(r"\w+", query.lower()))
+        # Level 1 Normalization: strip, normalize whitespace
+        query_norm = re.sub(r"\s+", " ", query.lower()).strip()
+        query_words = set(re.findall(r"\w+", query_norm))
         scored_candidates = []
 
         for idx, chunk in enumerate(self.chunks):
@@ -155,8 +157,9 @@ class RAGEngine:
             term_words = set(re.findall(r"\w+", term_lower))
 
             # Calculate semantic similarity score
-            # Exact phrase match in query
-            if term_lower in query.lower():
+            # Exact term/phrase match with word boundaries to prevent subword false hits (e.g. 'api' in 'capital', 'rag' in 'storage')
+            exact_term_match = bool(re.search(rf"(?<!\w){re.escape(term_lower)}(?!\w)", query_norm))
+            if exact_term_match:
                 sim = min(0.95, max(0.85, 0.80 + raw_sim * 0.5))
             # Direct word match of key term
             elif term_words and term_words.issubset(query_words):
