@@ -316,6 +316,42 @@ class STTService:
         )
         return clean_text, info, post_diag, engine_used, model_used
 
+    def transcribe_partial(self, audio_bytes: bytes, lang: Optional[str] = None) -> str:
+        """
+        Lightweight incremental transcription for intermediate streaming partials.
+        Converts available buffer window to WAV and performs fast single-beam decoding.
+        Returns empty string if audio is too short (< 0.8s) or decoding fails.
+        """
+        if not audio_bytes or len(audio_bytes) < 4000:
+            return ""
+
+        if self.model is None:
+            return ""
+
+        try:
+            wav_bytes = convert_to_clean_wav(audio_bytes)
+        except Exception:
+            return ""
+
+        whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
+        initial_prompt = "यह हिंदी में बातचीत है।" if whisper_lang == "hi" else None
+
+        try:
+            segments, _ = self.model.transcribe(
+                io.BytesIO(wav_bytes),
+                language=whisper_lang,
+                beam_size=1,
+                temperature=0.0,
+                vad_filter=False,
+                condition_on_previous_text=False,
+                initial_prompt=initial_prompt,
+            )
+            text = ' '.join(seg.text for seg in segments).strip()
+            return text
+        except Exception:
+            return ""
+
 
 # Process-level singleton instance
 stt_service = STTService()
+
