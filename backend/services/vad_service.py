@@ -145,10 +145,21 @@ class VADService:
         if pad_len > 0:
             audio = np.pad(audio, (0, pad_len))
 
-        probs = self._model(audio.reshape(1, -1), num_samples=window_size).squeeze()
-        if probs.ndim == 0:
-            probs = np.array([probs.item()], dtype=np.float32)
-        return probs
+        n_windows = len(audio) // window_size
+        if n_windows == 0:
+            return np.empty(0, dtype=np.float32)
+
+        # Batch in smaller window chunks (max 16) to avoid ONNXRuntime Conv allocation spikes
+        chunk_windows = 16
+        probs_list = []
+        for i in range(0, n_windows, chunk_windows):
+            sub_audio = audio[i * window_size : min(len(audio), (i + chunk_windows) * window_size)]
+            sub_probs = self._model(sub_audio.reshape(1, -1), num_samples=window_size).squeeze()
+            if sub_probs.ndim == 0:
+                probs_list.append(sub_probs.item())
+            else:
+                probs_list.extend(sub_probs.tolist())
+        return np.array(probs_list, dtype=np.float32)
 
     def detect_speech_probability(self, audio_data: bytes | np.ndarray) -> float:
         """

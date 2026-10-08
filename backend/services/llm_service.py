@@ -19,7 +19,9 @@ class LLMService:
         source_lang: str = "en",
         target_lang: str = "hi",
         session_id: str = "default",
-        domain: str = "all"
+        domain: str = "all",
+        engine: Optional[str] = None,
+        rag_enabled: bool = True
     ) -> Dict[str, Any]:
         """Execute context-aware and domain-grounded translation."""
         return self._translator.translate(
@@ -27,7 +29,9 @@ class LLMService:
             source_lang=source_lang,
             target_lang=target_lang,
             session_id=session_id,
-            domain=domain
+            domain=domain,
+            engine=engine,
+            rag_enabled=rag_enabled
         )
 
     def get_status(self) -> Dict[str, Any]:

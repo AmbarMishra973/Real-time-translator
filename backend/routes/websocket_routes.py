@@ -41,6 +41,8 @@ async def websocket_streaming_endpoint(websocket: WebSocket):
         return
 
     if stt_service.model is None:
+        stt_service._load_model()
+    if stt_service.model is None:
         await websocket.close(code=1011, reason="No local Faster-Whisper model available on server.")
         return
 

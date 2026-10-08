@@ -207,30 +207,39 @@ class STTService:
         self._load_model()
 
     def _load_model(self) -> None:
+        if self.model is not None:
+            return
+        import gc, time
+        gc.collect()
         print(f"[*] Initializing Faster-Whisper ({self.model_size} on {self.device})...", flush=True)
-        try:
-            self.model = WhisperModel(
-                self.model_size,
-                device=self.device,
-                compute_type=self.compute_type,
-                cpu_threads=self.cpu_threads
-            )
-            print("[+] Whisper model loaded successfully.", flush=True)
-        except Exception as e:
-            print(f"[!] Warning: Could not load {self.model_size} model ({e}).", flush=True)
-            if self.model_size != "base":
-                try:
-                    print("[*] Attempting cached base-model fallback...", flush=True)
-                    self.model = WhisperModel(
-                        "base",
-                        device="cpu",
-                        compute_type="int8",
-                        cpu_threads=self.cpu_threads
-                    )
-                    self.model_size = "base"
-                    print("[+] Base fallback model loaded successfully.", flush=True)
-                except Exception as fallback_error:
-                    print(f"[!] Local Whisper is unavailable: {fallback_error}", flush=True)
+        for attempt in range(2):
+            try:
+                self.model = WhisperModel(
+                    self.model_size,
+                    device=self.device,
+                    compute_type=self.compute_type,
+                    cpu_threads=self.cpu_threads
+                )
+                print("[+] Whisper model loaded successfully.", flush=True)
+                return
+            except Exception as e:
+                print(f"[!] Warning: Could not load {self.model_size} model attempt {attempt+1} ({e}).", flush=True)
+                gc.collect()
+                time.sleep(0.5)
+
+        if self.model_size != "base":
+            try:
+                print("[*] Attempting cached base-model fallback...", flush=True)
+                self.model = WhisperModel(
+                    "base",
+                    device="cpu",
+                    compute_type="int8",
+                    cpu_threads=self.cpu_threads
+                )
+                self.model_size = "base"
+                print("[+] Base fallback model loaded successfully.", flush=True)
+            except Exception as fallback_error:
+                print(f"[!] Local Whisper is unavailable: {fallback_error}", flush=True)
 
     def transcribe(
         self,

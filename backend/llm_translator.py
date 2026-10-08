@@ -95,7 +95,7 @@ class LLMTranslator:
         self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.default_provider = os.getenv("DEFAULT_LLM_PROVIDER", "groq")
-        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+        self.groq_model = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
         self._groq_client = None
         # In-memory translation cache to avoid redundant API hits and rate limits
         self._cache: Dict[tuple, str] = {}
@@ -175,16 +175,28 @@ RECENT CONVERSATION (for pronoun/context resolution):
             )
         except Exception as e:
             if "model_not_found" in str(e) or "does not exist" in str(e):
-                print("[!] Model unavailable, retrying with llama-3.1-8b-instant...")
-                response = self._groq_client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": f"Text to translate:\n{user_text}"}
-                    ],
-                    temperature=0.1,
-                    max_tokens=256
-                )
+                candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+                response = None
+                for m in candidate_models:
+                    if m == self.groq_model:
+                        continue
+                    try:
+                        print(f"[!] Model {self.groq_model} unavailable, retrying with {m}...")
+                        response = self._groq_client.chat.completions.create(
+                            model=m,
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": f"Text to translate:\n{user_text}"}
+                            ],
+                            temperature=0.1,
+                            max_tokens=256
+                        )
+                        self.groq_model = m
+                        break
+                    except Exception:
+                        continue
+                if response is None:
+                    raise e
             else:
                 raise e
 
@@ -413,10 +425,14 @@ RECENT CONVERSATION (for pronoun/context resolution):
         target_lang: str = "hi",
         session_id: str = "default",
         domain: Optional[str] = "all",
-        top_k: int = 3
+        top_k: int = 3,
+        engine: Optional[str] = None,
+        rag_enabled: bool = True
     ) -> Dict[str, Any]:
         """
         Executes the full RAG + Context + LLM translation workflow.
+        Supports TRANSLATION_ENGINE feature flag ('groq', 'fallback', 'indictrans2', 'candidate_local').
+        Supports rag_enabled flag for RAG A/B evaluation.
         """
         import time
         t0 = time.perf_counter()
@@ -436,11 +452,18 @@ RECENT CONVERSATION (for pronoun/context resolution):
                 "history": self.conversation_manager.get_history(session_id)
             }
 
-        # 1. RAG Retrieval
-        rag_res = rag_engine.retrieve(query=text, domain=domain, top_k=top_k)
-        retrieved_items = rag_res["chunks"]
-        sources_used = rag_res["sources_used"]
-        rag_context_str = rag_engine.format_context_for_prompt(retrieved_items)
+        # Resolve active translation engine
+        active_engine = (engine or os.getenv("TRANSLATION_ENGINE", "groq")).lower().strip()
+
+        # 1. RAG Retrieval (bypassed if rag_enabled is False)
+        retrieved_items = []
+        sources_used = []
+        rag_context_str = "No domain terminology available."
+        if rag_enabled:
+            rag_res = rag_engine.retrieve(query=text, domain=domain, top_k=top_k)
+            retrieved_items = rag_res["chunks"]
+            sources_used = rag_res["sources_used"]
+            rag_context_str = rag_engine.format_context_for_prompt(retrieved_items)
 
         # 2. Conversation History
         history_str = self.conversation_manager.format_history_for_prompt(session_id)
@@ -460,10 +483,25 @@ RECENT CONVERSATION (for pronoun/context resolution):
         fallback_used = False
         fallback_reason = None
 
-        # 3. LLM Translation
-        t_llm_start = time.perf_counter()
-        print(f"[TRANSLATION_STARTED] text: \"{text}\" ({source_lang} -> {target_lang})")
-        if self._groq_client:
+        # 3. Translation Execution based on selected engine
+        t_trans_start = time.perf_counter()
+        print(f"[TRANSLATION_STARTED] text: \"{text}\" ({source_lang} -> {target_lang}) [engine={active_engine}]")
+
+        if active_engine == "fallback":
+            # Candidate C: Dedicated multi-tier fallback cascade
+            translated_text = self._translate_with_fallback(text, source_lang, target_lang, retrieved_items)
+            provider_used = "Local Fallback Cascade"
+            fallback_used = True
+            fallback_reason = "configured_fallback_engine"
+        elif active_engine in ("indictrans2", "candidate_local"):
+            # Candidate A/B requested but marked not feasible on CPU Windows environment
+            print(f"[!] Engine '{active_engine}' not feasible or installed on current machine, falling back...")
+            translated_text = self._translate_with_fallback(text, source_lang, target_lang, retrieved_items)
+            provider_used = f"Local Fallback ({active_engine} unfeasible)"
+            fallback_used = True
+            fallback_reason = f"engine_{active_engine}_not_feasible_on_windows_cpu"
+        elif self._groq_client:
+            # Control / Production Groq path
             try:
                 translated_text = self._translate_with_groq(system_prompt, text)
                 provider_used = f"Groq ({self.groq_model})"
@@ -479,8 +517,8 @@ RECENT CONVERSATION (for pronoun/context resolution):
             fallback_used = True
             fallback_reason = "groq_client_not_configured"
         
-        llm_latency_s = round(time.perf_counter() - t_llm_start, 2)
-        print(f"[TRANSLATION_COMPLETED] engine: '{provider_used}' translated: \"{translated_text}\" (took {llm_latency_s}s)")
+        trans_latency_s = round(time.perf_counter() - t_trans_start, 3)
+        print(f"[TRANSLATION_COMPLETED] engine: '{provider_used}' translated: \"{translated_text}\" (took {trans_latency_s}s)")
 
         # 4. Save turn to conversation history
         self.conversation_manager.add_turn(
@@ -502,7 +540,7 @@ RECENT CONVERSATION (for pronoun/context resolution):
             "fallback_used": fallback_used,
             "fallback_reason": fallback_reason,
             "context_used": len(retrieved_items) > 0,
-            "latency_s": llm_latency_s,
+            "latency_s": trans_latency_s,
             "total_latency_s": round(time.perf_counter() - t0, 2),
             "history": self.conversation_manager.get_history(session_id)
         }
