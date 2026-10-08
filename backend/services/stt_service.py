@@ -165,12 +165,12 @@ def convert_to_clean_wav(audio_bytes: bytes, suffix: str = ".bin") -> bytes:
     Converts and resamples incoming browser audio (WebM, OGG, MP4, WAV, etc.)
     into clean 16kHz mono WAV PCM.
     Dispatches to control (disk-based) or in_memory path based on AUDIO_PIPELINE_MODE.
-    Default mode: 'control' (preserves production behavior).
+    Default mode: 'in_memory' (Phase 1 accepted in-memory path).
     """
-    mode = os.getenv("AUDIO_PIPELINE_MODE", "control").strip().lower()
-    if mode == "in_memory":
-        return convert_to_clean_wav_in_memory(audio_bytes, suffix)
-    return convert_to_clean_wav_control(audio_bytes, suffix)
+    mode = os.getenv("AUDIO_PIPELINE_MODE", "in_memory").strip().lower()
+    if mode == "control":
+        return convert_to_clean_wav_control(audio_bytes, suffix)
+    return convert_to_clean_wav_in_memory(audio_bytes, suffix)
 
 
 def parse_capture_metadata(raw_metadata: Optional[str]) -> dict:

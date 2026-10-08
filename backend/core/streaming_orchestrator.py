@@ -15,6 +15,7 @@ from backend.services.stt_service import stt_service, STTService
 from backend.services.rag_service import rag_service, RAGService
 from backend.services.llm_service import llm_service, LLMService
 from backend.services.session_manager import session_manager, SessionManager
+from backend.services.vad_service import vad_service, VADService, VADSessionState
 
 DEFAULT_MAX_BUFFER_BYTES = int(os.getenv("STREAM_MAX_BUFFER_BYTES", 5 * 1024 * 1024))  # 5 MB
 DEFAULT_MIN_PARTIAL_BYTES = int(os.getenv("STREAM_MIN_PARTIAL_BYTES", 16000))
@@ -31,7 +32,8 @@ class StreamingSession:
         language: str = "en",
         target_lang: str = "hi",
         domain: str = "all",
-        max_buffer_bytes: int = DEFAULT_MAX_BUFFER_BYTES
+        max_buffer_bytes: int = DEFAULT_MAX_BUFFER_BYTES,
+        vad_enabled: Optional[bool] = None,
     ):
         self.session_id = session_id
         self.request_id = request_id
@@ -39,6 +41,10 @@ class StreamingSession:
         self.target_lang = target_lang
         self.domain = domain
         self.max_buffer_bytes = max_buffer_bytes
+
+        # VAD & Endpointing configuration (defaults to VAD_ENABLED env var)
+        self.vad_enabled = vad_enabled if vad_enabled is not None else (os.getenv("VAD_ENABLED", "false").lower() == "true")
+        self.vad_state: VADSessionState = vad_service.create_session_state(session_id=self.session_id)
 
         self.buffer = bytearray()
         self.first_audio_ts: Optional[float] = None
@@ -53,6 +59,7 @@ class StreamingSession:
     def add_chunk(self, chunk: bytes) -> bool:
         """
         Appends incoming audio chunk to buffer with protection against unbounded growth.
+        Updates session VAD tracking when enabled.
         Returns True if chunk accepted, raises ValueError if buffer limit exceeded.
         """
         if self.is_cancelled:
@@ -65,10 +72,17 @@ class StreamingSession:
             self.first_audio_ts = time.perf_counter()
 
         self.buffer.extend(chunk)
+
+        if self.vad_enabled and vad_service.is_available and len(chunk) > 0:
+            vad_service.process_streaming_chunk(chunk, self.vad_state)
+
         return True
 
     def should_trigger_partial(self) -> bool:
-        """Determines if enough incremental audio has arrived to evaluate a partial transcript."""
+        """
+        Determines if enough incremental audio has arrived to evaluate a partial transcript.
+        When VAD is enabled, avoids scheduling expensive Whisper inference on silence.
+        """
         if self.is_cancelled or self.is_evaluating_partial:
             return False
 
@@ -76,13 +90,21 @@ class StreamingSession:
         if cur_len < DEFAULT_MIN_PARTIAL_BYTES:
             return False
 
-        if (cur_len - self.last_partial_bytes_len) >= DEFAULT_PARTIAL_INTERVAL_BYTES:
-            return True
+        if (cur_len - self.last_partial_bytes_len) < DEFAULT_PARTIAL_INTERVAL_BYTES:
+            return False
 
-        return False
+        # When VAD is active, skip partial inference if buffer contains no speech
+        if self.vad_enabled and vad_service.is_available:
+            if not self.vad_state.is_speech_active:
+                snapshot = bytes(self.buffer)
+                if not vad_service.has_speech(snapshot):
+                    return False
+                self.vad_state.is_speech_active = True
+
+        return True
 
     def reset_for_next_turn(self, new_request_id: Optional[str] = None) -> None:
-        """Resets streaming buffers while keeping session metadata intact."""
+        """Resets streaming buffers and VAD tracking while keeping session metadata intact."""
         self.request_id = new_request_id or uuid.uuid4().hex[:10]
         self.buffer.clear()
         self.first_audio_ts = None
@@ -92,6 +114,7 @@ class StreamingSession:
         self.is_evaluating_partial = False
         self.last_partial_text = ""
         self.last_partial_bytes_len = 0
+        self.vad_state.reset_for_next_turn()
 
 
 class StreamingOrchestrator:
@@ -118,7 +141,8 @@ class StreamingOrchestrator:
         request_id: Optional[str] = None,
         language: str = "en",
         target_lang: str = "hi",
-        domain: str = "all"
+        domain: str = "all",
+        vad_enabled: Optional[bool] = None,
     ) -> StreamingSession:
         sid = session_id or f"stream_{uuid.uuid4().hex[:8]}"
         rid = request_id or uuid.uuid4().hex[:10]
@@ -127,7 +151,8 @@ class StreamingOrchestrator:
             request_id=rid,
             language=language,
             target_lang=target_lang,
-            domain=domain
+            domain=domain,
+            vad_enabled=vad_enabled,
         )
         stream_log("stream_started", rid, session_id=sid, language=language, target_lang=target_lang)
         return session

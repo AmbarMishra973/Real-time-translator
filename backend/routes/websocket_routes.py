@@ -161,6 +161,17 @@ async def websocket_streaming_endpoint(websocket: WebSocket):
                     background_tasks.add(t)
                     t.add_done_callback(background_tasks.discard)
 
+                # Conversational endpoint detection notification
+                if session.vad_enabled and session.vad_state.endpoint_detected:
+                    try:
+                        await websocket.send_json({
+                            "type": "endpoint",
+                            "request_id": session.request_id,
+                            "silence_ms": round(session.vad_state.continuous_silence_ms, 1)
+                        })
+                    except Exception:
+                        pass
+
     except (WebSocketDisconnect, RuntimeError) as e:
         if isinstance(e, RuntimeError) and "disconnect" not in str(e).lower():
             stream_log("stream_error", session.request_id, error=str(e))
