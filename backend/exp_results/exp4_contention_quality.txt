@@ -1,0 +1,67 @@
+================================================================================
+P9 EXPERIMENT 4 -- CPU Contention vs Whisper Transcription Quality
+================================================================================
+Model: base | Device: cpu | Compute: int8 | Threads: 2 | System CPUs: 4
+Found 35 distinct audio benchmark files.
+
+Warming up Whisper...
+Warmup complete.
+
+
+--- Testing Sample: EN-L1 (5.88s, lang=en) ---
+  [1] Isolated       : wall=2.188s -> "Hello, what is your name?  What are you doing?  What is your job?"
+  [2] Whisper-Contend: wall=6.204s (x2.84) -> "Hello, what is your name?  What are you doing?  What is your job?"
+  [3] CPU-Burn       : wall=14.151s (x6.47) -> "Hello, what is your name?  What are you doing?  What is your job?"
+
+--- Testing Sample: EN-L2 (8.23s, lang=en) ---
+  [1] Isolated       : wall=2.489s -> "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency."
+  [2] Whisper-Contend: wall=6.146s (x2.47) -> "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency."
+  [3] CPU-Burn       : wall=18.675s (x7.50) -> "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency."
+
+--- Testing Sample: EN-L3 (9.02s, lang=en) ---
+  [1] Isolated       : wall=2.102s -> "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+  [2] Whisper-Contend: wall=6.125s (x2.91) -> "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+  [3] CPU-Burn       : wall=28.128s (x13.38) -> "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+
+--- Testing Sample: EN-L4 (6.89s, lang=en) ---
+  [1] Isolated       : wall=2.402s -> "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window."
+  [2] Whisper-Contend: wall=5.533s (x2.30) -> "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window."
+  [3] CPU-Burn       : wall=7.726s (x3.22) -> "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window."
+
+--- Testing Sample: EN-L5 (8.74s, lang=en) ---
+  [1] Isolated       : wall=2.935s -> "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks."
+  [2] Whisper-Contend: wall=6.481s (x2.21) -> "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks."
+  [3] CPU-Burn       : wall=12.155s (x4.14) -> "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks."
+
+--- Testing Sample: EN-S1 (2.28s, lang=en) ---
+  [1] Isolated       : wall=2.187s -> "Hello, how are you?"
+  [2] Whisper-Contend: wall=7.688s (x3.52) -> "Hello, how are you?"
+  [3] CPU-Burn       : wall=11.516s (x5.27) -> "Hello, how are you?"
+
+--- Testing Sample: EN-S2 (2.11s, lang=en) ---
+  [1] Isolated       : wall=1.915s -> "What time is the meeting?"
+  [2] Whisper-Contend: wall=4.948s (x2.58) -> "What time is the meeting?"
+  [3] CPU-Burn       : wall=8.503s (x4.44) -> "What time is the meeting?"
+
+--- Testing Sample: EN-S3 (2.09s, lang=en) ---
+  [1] Isolated       : wall=1.973s -> "Can you hear me clearly?"
+  [2] Whisper-Contend: wall=5.686s (x2.88) -> "Can you hear me clearly?"
+  [3] CPU-Burn       : wall=13.914s (x7.05) -> "Can you hear me clearly?"
+
+================================================================================
+EXPERIMENT 4 SUMMARY TABLE
+================================================================================
+Sample         Dur  Iso(s)  WCont(s)  Ratio_W  CBurn(s)  Ratio_C  W_Match  C_Match
+--------------------------------------------------------------------------------
+EN-L1         5.9s    2.19      6.20    2.84x     14.15    6.47x IDENTICAL IDENTICAL
+EN-L2         8.2s    2.49      6.15    2.47x     18.67    7.50x IDENTICAL IDENTICAL
+EN-L3         9.0s    2.10      6.12    2.91x     28.13   13.38x IDENTICAL IDENTICAL
+EN-L4         6.9s    2.40      5.53    2.30x      7.73    3.22x IDENTICAL IDENTICAL
+EN-L5         8.7s    2.93      6.48    2.21x     12.16    4.14x IDENTICAL IDENTICAL
+EN-S1         2.3s    2.19      7.69    3.52x     11.52    5.27x IDENTICAL IDENTICAL
+EN-S2         2.1s    1.92      4.95    2.58x      8.50    4.44x IDENTICAL IDENTICAL
+EN-S3         2.1s    1.97      5.69    2.88x     13.91    7.05x IDENTICAL IDENTICAL
+
+QUALITY VERDICT:
+  [CONFIRMED HYPOTHESIS REFUTED] CPU contention caused 0% quality difference (100% identical outputs).
+  CPU contention only causes LATENCY slowdown, NOT quality/accuracy degradation.

@@ -1,0 +1,122 @@
+======================================================================
+P9 EXP 3 -- Language Forcing vs Auto-Detection
+Does forcing lang=en on Hindi/Hinglish audio cause failure?
+======================================================================
+Model=base threads=2
+
+[*] Warmup...
+[+] Done
+
+
+======================================================================
+FILE: Hindi-1 (3.0s)  (HI-1.wav, true_lang=hi)
+======================================================================
+  [A] lang=en   (2.005s, detected=en)
+      transcript: 'Namaste, how are you?'
+      classify:   WRONG_LATIN (transliterated or English words)
+  [B] lang=hi   (2.438s, detected=hi)
+      transcript: 'नमस्ती आप के से है?'
+      classify:   CORRECT_DEVANAGARI
+  [C] lang=auto (3.405s, detected=hi)
+      transcript: 'Namaste,あなたはどうしているの?'
+      classify:   WRONG_LATIN (transliterated or English words)
+  >> lang=hi gives correct Devanagari output
+
+======================================================================
+FILE: Hindi-2 (3.8s)  (HI-2.wav, true_lang=hi)
+======================================================================
+  [A] lang=en   (2.195s, detected=en)
+      transcript: 'What is your name and where are you staying?'
+      classify:   WRONG_LATIN (transliterated or English words)
+  [B] lang=hi   (2.003s, detected=hi)
+      transcript: 'आपका नाम क्या है।'
+      classify:   CORRECT_DEVANAGARI
+  [C] lang=auto (3.726s, detected=hi)
+      transcript: 'آپ کا نام کیا ہے اور آپ کہا رہتے ہیں'
+      classify:   UNKNOWN_SCRIPT
+  >> lang=hi gives correct Devanagari output
+
+======================================================================
+FILE: Hindi-3 (4.0s)  (HI-3.wav, true_lang=hi)
+======================================================================
+  [A] lang=en   (2.100s, detected=en)
+      transcript: 'I am feeling very good today.'
+      classify:   WRONG_LATIN (transliterated or English words)
+  [B] lang=hi   (2.738s, detected=hi)
+      transcript: 'मूजी वाच का मोसम बहुजा ज़ागा नए है।'
+      classify:   CORRECT_DEVANAGARI
+  [C] lang=auto (6.630s, detected=hi)
+      transcript: 'Mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouzam, mouz'
+      classify:   WRONG_LATIN (transliterated or English words)
+  >> lang=hi gives correct Devanagari output
+
+======================================================================
+FILE: Hinglish-1 (2.7s)  (HG-1.wav, true_lang=hinglish)
+======================================================================
+  [A] lang=en   (2.176s, detected=en)
+      transcript: 'What is the time of meeting today?'
+      classify:   CONTAINS_EXPECTED_CONTENT
+  [B] lang=hi   (2.284s, detected=hi)
+      transcript: 'अज मीतिन का ताम क्या है?'
+      classify:   CONTAINS_EXPECTED_CONTENT
+  [C] lang=auto (4.038s, detected=hi)
+      transcript: 'آج میٹین کا time کیا ہے?'
+      classify:   CONTAINS_EXPECTED_CONTENT
+
+======================================================================
+FILE: Hinglish-2 (5.0s)  (HG-2.wav, true_lang=hinglish)
+======================================================================
+  [A] lang=en   (2.409s, detected=en)
+      transcript: 'My laptop restarted and the code is not saved.'
+      classify:   CONTAINS_EXPECTED_CONTENT
+  [B] lang=hi   (2.351s, detected=hi)
+      transcript: 'मेर बाँ भाँ परी स्भाद हो एक है।'
+      classify:   CONTAINS_EXPECTED_CONTENT
+  [C] lang=auto (3.839s, detected=hi)
+      transcript: 'میرا lap top restart has been made and not saved code.'
+      classify:   CONTAINS_EXPECTED_CONTENT
+
+======================================================================
+FILE: English-S1 (2.3s)  (EN-S1.wav, true_lang=en)
+======================================================================
+  [A] lang=en   (2.131s, detected=en)
+      transcript: 'Hello, how are you?'
+      classify:   CORRECT_LATIN
+  [B] lang=hi   (2.339s, detected=hi)
+      transcript: 'Hello, How are you?'
+      classify:   CORRECT_LATIN
+  [C] lang=auto (3.508s, detected=en)
+      transcript: 'Hello, how are you?'
+      classify:   CORRECT_LATIN
+  Control check (en): A vs C match = YES
+
+======================================================================
+FILE: English-S2 (2.1s)  (EN-S2.wav, true_lang=en)
+======================================================================
+  [A] lang=en   (2.042s, detected=en)
+      transcript: 'What time is the meeting?'
+      classify:   CORRECT_LATIN
+  [B] lang=hi   (4.930s, detected=hi)
+      transcript: 'यह लिवावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावा�'
+      classify:   UNEXPECTED_SCRIPT
+  [C] lang=auto (4.319s, detected=en)
+      transcript: 'What time is the meeting?'
+      classify:   CORRECT_LATIN
+  Control check (en): A vs C match = YES
+
+======================================================================
+SUMMARY TABLE
+======================================================================
+File                    TrueLang                A(en)                B(hi)              C(auto)
+Hindi-1 (3.0s)                hi WRONG_LATIN (transliterated or English words)   CORRECT_DEVANAGARI WRONG_LATIN (transliterated or English words)
+Hindi-2 (3.8s)                hi WRONG_LATIN (transliterated or English words)   CORRECT_DEVANAGARI       UNKNOWN_SCRIPT
+Hindi-3 (4.0s)                hi WRONG_LATIN (transliterated or English words)   CORRECT_DEVANAGARI WRONG_LATIN (transliterated or English words)
+Hinglish-1 (2.7s)       hinglish CONTAINS_EXPECTED_CONTENT CONTAINS_EXPECTED_CONTENT CONTAINS_EXPECTED_CONTENT
+Hinglish-2 (5.0s)       hinglish CONTAINS_EXPECTED_CONTENT CONTAINS_EXPECTED_CONTENT CONTAINS_EXPECTED_CONTENT
+English-S1 (2.3s)             en        CORRECT_LATIN        CORRECT_LATIN        CORRECT_LATIN
+English-S2 (2.1s)             en        CORRECT_LATIN    UNEXPECTED_SCRIPT        CORRECT_LATIN
+
+KEY QUESTIONS:
+  1. For Hindi files: does lang=en produce garbage? (expected: YES)
+  2. For Hindi files: does lang=auto produce Devanagari? (expected: YES)
+  3. For English files: do all conditions produce the same output? (expected: YES)

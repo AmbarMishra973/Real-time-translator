@@ -1,0 +1,260 @@
+================================================================================
+P9 EXPERIMENT 5 -- Empirical Partial Reusability vs Coverage Threshold
+================================================================================
+Model: base | Threads: 2 | Device: cpu
+
+Warming up Whisper...
+Warmup complete.
+
+
+================================================================================
+FILE: EN-S1.wav | Category: Short EN (2.3s) | Full Duration: 2.28s | Lang: en
+================================================================================
+Authoritative [100%]: "Hello, how are you?" (wall=1.87s, words=4)
+  [ 50% coverage (1.14s)]: tag=MATCH wer=0.00 words= 4/4  wall=1.60s -> "Hello, how are you?"
+  [ 60% coverage (1.37s)]: tag=MATCH wer=0.00 words= 4/4  wall=1.84s -> "Hello, how are you?"
+  [ 70% coverage (1.60s)]: tag=MATCH wer=0.00 words= 4/4  wall=1.55s -> "Hello, how are you?"
+  [ 80% coverage (1.82s)]: tag=MATCH wer=0.00 words= 4/4  wall=1.54s -> "Hello, how are you?"
+  [ 90% coverage (2.05s)]: tag=MATCH wer=0.00 words= 4/4  wall=1.59s -> "Hello, how are you?"
+  [100% coverage (2.28s)]: tag=MATCH wer=0.00 words= 4/4  wall=3.36s -> "Hello, how are you?"
+
+================================================================================
+FILE: EN-S2.wav | Category: Short EN (2.1s) | Full Duration: 2.11s | Lang: en
+================================================================================
+Authoritative [100%]: "What time is the meeting?" (wall=2.34s, words=5)
+  [ 50% coverage (1.06s)]: tag=MATCH wer=0.00 words= 5/5  wall=2.06s -> "What time is the meeting?"
+  [ 60% coverage (1.27s)]: tag=MATCH wer=0.00 words= 5/5  wall=2.28s -> "What time is the meeting?"
+  [ 70% coverage (1.48s)]: tag=MATCH wer=0.00 words= 5/5  wall=1.72s -> "What time is the meeting?"
+  [ 80% coverage (1.69s)]: tag=MATCH wer=0.00 words= 5/5  wall=1.71s -> "What time is the meeting?"
+  [ 90% coverage (1.90s)]: tag=MATCH wer=0.00 words= 5/5  wall=1.93s -> "What time is the meeting?"
+  [100% coverage (2.11s)]: tag=MATCH wer=0.00 words= 5/5  wall=2.38s -> "What time is the meeting?"
+
+================================================================================
+FILE: HI-1.wav | Category: Short HI (3.0s) | Full Duration: 3.00s | Lang: hi
+================================================================================
+Authoritative [100%]: "नमस्ती आप के से है?" (wall=2.58s, words=5)
+  [ 50% coverage (1.50s)]: tag=DIFF  wer=7.20 words=38/5  wall=4.79s -> "नमस्ते आप लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ ल"
+  [ 60% coverage (1.80s)]: tag=TRUNC wer=0.20 words= 4/5  wall=2.48s -> "नमस्ती आप के सि..."
+         missing end: ...ह
+  [ 70% coverage (2.10s)]: tag=TRUNC wer=0.40 words= 4/5  wall=1.95s -> "नमस्ती अपके से हैं?"
+         missing end: ...नमसत आप क
+  [ 80% coverage (2.40s)]: tag=TRUNC wer=0.40 words= 4/5  wall=2.15s -> "नमस्ती अपके से है।"
+         missing end: ...नमसत आप क
+  [ 90% coverage (2.70s)]: tag=MATCH wer=0.00 words= 5/5  wall=2.28s -> "नमस्ती आप के से है?"
+  [100% coverage (3.00s)]: tag=MATCH wer=0.00 words= 5/5  wall=1.87s -> "नमस्ती आप के से है?"
+
+================================================================================
+FILE: TECH-1.wav | Category: Medium EN (4.6s) | Full Duration: 4.63s | Lang: en
+================================================================================
+Authoritative [100%]: "We need to deploy our containerized microservices to Kubanades." (wall=2.88s, words=9)
+  [ 50% coverage (2.32s)]: tag=TRUNC wer=0.33 words= 7/9  wall=1.82s -> "We need to deploy our containerized micros..."
+         missing end: ...to kubanades
+  [ 60% coverage (2.78s)]: tag=TRUNC wer=0.22 words= 7/9  wall=1.73s -> "We need to deploy our containerized microservices."
+         missing end: ...to kubanades
+  [ 70% coverage (3.24s)]: tag=DIFF  wer=0.11 words= 9/9  wall=2.00s -> "We need to deploy our containerized microservices to Kubrick."
+  [ 80% coverage (3.71s)]: tag=DIFF  wer=0.11 words= 9/9  wall=1.89s -> "We need to deploy our containerized microservices to Kubernetes."
+  [ 90% coverage (4.17s)]: tag=MATCH wer=0.00 words= 9/9  wall=1.84s -> "We need to deploy our containerized microservices to Kubanades."
+  [100% coverage (4.63s)]: tag=MATCH wer=0.00 words= 9/9  wall=2.24s -> "We need to deploy our containerized microservices to Kubanades."
+
+================================================================================
+FILE: HG-2.wav | Category: Medium HG (5.0s) | Full Duration: 4.99s | Lang: hi
+================================================================================
+Authoritative [100%]: "मेर बाँ भाँ परी स्भाद हो एक है।" (wall=2.71s, words=8)
+  [ 50% coverage (2.50s)]: tag=DIFF  wer=0.62 words= 8/8  wall=2.11s -> "मेर रव़ तो निवाँ परीखाँ हो लाँ है।"
+  [ 60% coverage (3.00s)]: tag=TRUNC wer=0.62 words= 6/8  wall=2.44s -> "मेर बाँ तो परीड ताखाखाखा है।"
+         missing end: ...मर ब भ पर सभद ह एक
+  [ 70% coverage (3.49s)]: tag=DIFF  wer=4.50 words=40/8  wall=4.93s -> "मेर बाच तो परी स्भाथ हो लाँवाथ हो आचाथ हो आचाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो लाँवाथ हो �"
+  [ 80% coverage (3.99s)]: tag=TRUNC wer=0.38 words= 7/8  wall=2.32s -> "मेर बातचोँ परी स्भाद हो लाँवाँ है।"
+         missing end: ...मर ब भ पर सभद ह एक
+  [ 90% coverage (4.49s)]: tag=DIFF  wer=0.25 words= 8/8  wall=2.56s -> "मेर बाँ तो परी साः हो एक है।"
+  [100% coverage (4.99s)]: tag=MATCH wer=0.00 words= 8/8  wall=2.28s -> "मेर बाँ भाँ परी स्भाद हो एक है।"
+
+================================================================================
+FILE: EN-L1.wav | Category: Medium EN (5.9s) | Full Duration: 5.88s | Lang: en
+================================================================================
+Authoritative [100%]: "Hello, what is your name?  What are you doing?  What is your job?" (wall=2.64s, words=13)
+  [ 50% coverage (2.94s)]: tag=TRUNC wer=0.38 words= 8/13 wall=1.77s -> "Hello, what is your name?  What are you-"
+         missing end: ...doing what is your job
+  [ 60% coverage (3.53s)]: tag=TRUNC wer=0.31 words= 9/13 wall=1.75s -> "Hello, what is your name?  What are you doing?"
+         missing end: ...what is your job
+  [ 70% coverage (4.12s)]: tag=TRUNC wer=0.31 words= 9/13 wall=1.78s -> "Hello, what is your name?  What are you doing?"
+         missing end: ...what is your job
+  [ 80% coverage (4.70s)]: tag=TRUNC wer=0.08 words=12/13 wall=2.33s -> "Hello, what is your name? What are you doing? What is your"
+         missing end: ...job
+  [ 90% coverage (5.29s)]: tag=MATCH wer=0.00 words=13/13 wall=1.63s -> "Hello, what is your name? What are you doing? What is your job?"
+  [100% coverage (5.88s)]: tag=MATCH wer=0.00 words=13/13 wall=1.87s -> "Hello, what is your name?  What are you doing?  What is your job?"
+
+================================================================================
+FILE: EN-L2.wav | Category: Long EN (8.2s) | Full Duration: 8.23s | Lang: en
+================================================================================
+Authoritative [100%]: "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency." (wall=2.50s, words=22)
+  [ 50% coverage (4.12s)]: tag=TRUNC wer=0.41 words=14/22 wall=1.73s -> "Good morning everyone, today we are going to discuss the architecture of our realt."
+         missing end: ...translation system and how to optimize inference latency
+  [ 60% coverage (4.94s)]: tag=TRUNC wer=0.32 words=15/22 wall=1.67s -> "Good morning everyone, today we are going to discuss the architecture of our real-time translation."
+         missing end: ...system and how to optimize inference latency
+  [ 70% coverage (5.76s)]: tag=TRUNC wer=0.18 words=18/22 wall=2.35s -> "Good morning everyone, today we are going to discuss the architecture of our real-time translation system and how-"
+         missing end: ...to optimize inference latency
+  [ 80% coverage (6.59s)]: tag=DIFF  wer=0.09 words=22/22 wall=2.40s -> "Good morning everyone, today we are going to discuss the architecture of our real-time translation system and how to optimize it for-"
+  [ 90% coverage (7.41s)]: tag=MATCH wer=0.00 words=22/22 wall=1.92s -> "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency."
+  [100% coverage (8.23s)]: tag=MATCH wer=0.00 words=22/22 wall=2.08s -> "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency."
+
+================================================================================
+FILE: EN-L3.wav | Category: Long EN (9.0s) | Full Duration: 9.02s | Lang: en
+================================================================================
+Authoritative [100%]: "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis." (wall=2.16s, words=19)
+  [ 50% coverage (4.51s)]: tag=TRUNC wer=0.42 words=12/19 wall=2.22s -> "The speech recognition pipeline processes audio in small windows and produces state"
+         missing end: ...transcripts for downstream translation and speech synthesis
+  [ 60% coverage (5.41s)]: tag=TRUNC wer=0.32 words=13/19 wall=1.65s -> "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts."
+         missing end: ...for downstream translation and speech synthesis
+  [ 70% coverage (6.32s)]: tag=TRUNC wer=0.21 words=16/19 wall=1.83s -> "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream tr-"
+         missing end: ...and speech synthesis
+  [ 80% coverage (7.22s)]: tag=TRUNC wer=0.11 words=17/19 wall=1.70s -> "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and"
+         missing end: ...speech synthesis
+  [ 90% coverage (8.12s)]: tag=MATCH wer=0.00 words=19/19 wall=1.71s -> "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+  [100% coverage (9.02s)]: tag=MATCH wer=0.00 words=19/19 wall=2.15s -> "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+
+================================================================================
+FILE: EN-L5.wav | Category: Long EN (8.7s) | Full Duration: 8.74s | Lang: en
+================================================================================
+Authoritative [100%]: "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks." (wall=2.27s, words=21)
+  [ 50% coverage (4.37s)]: tag=TRUNC wer=0.48 words=12/21 wall=1.78s -> "We observed that running deep learning models on limited CPU resources required"
+         missing end: ...careful memory management and thread tuning to avoid bottlenecks
+  [ 60% coverage (5.24s)]: tag=TRUNC wer=0.33 words=14/21 wall=1.66s -> "We observed that running deep learning models on limited CPU resources requires careful memory."
+         missing end: ...management and thread tuning to avoid bottlenecks
+  [ 70% coverage (6.12s)]: tag=TRUNC wer=0.24 words=16/21 wall=1.66s -> "We observed that running deep learning models on limited CPU resources requires careful memory management and"
+         missing end: ...thread tuning to avoid bottlenecks
+  [ 80% coverage (6.99s)]: tag=TRUNC wer=0.10 words=20/21 wall=2.01s -> "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to a-"
+         missing end: ...bottlenecks
+  [ 90% coverage (7.86s)]: tag=MATCH wer=0.00 words=21/21 wall=1.78s -> "We observed that running deep learning models on limited CPU resources requires careful memory management  and thread tuning to avoid bottlenecks."
+  [100% coverage (8.74s)]: tag=MATCH wer=0.00 words=21/21 wall=1.74s -> "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks."
+
+================================================================================
+EXPERIMENT 5 SUMMARY TABLE: METRICS BY COVERAGE THRESHOLD
+================================================================================
+Coverage   Exact%   Avg_WER   Trunc%   EndingMatch%  AvgMissingWords  AvgPartialWall
+--------------------------------------------------------------------------------
+     50%    22.2%     1.09    55.6%          33.3%            3.44          2.21s
+     60%    22.2%     0.26    77.8%          33.3%            3.78          1.94s
+     70%    22.2%     0.66    55.6%          44.4%            2.11          2.19s
+     80%    22.2%     0.14    55.6%          44.4%            1.56          2.01s
+     90%    88.9%     0.03     0.0%         100.0%            0.00          1.92s
+    100%   100.0%     0.00     0.0%         100.0%            0.00          2.22s
+
+================================================================================
+BREAKDOWN BY AUDIO LENGTH CATEGORY
+================================================================================
+
+Sample: EN-S1.wav (Short EN (2.3s))
+Coverage   Match    WER   Trunc  EndMatch Transcript                                        
+--------------------------------------------------------------------------------
+     50%     YES   0.00      NO       YES "Hello, how are you?"
+     60%     YES   0.00      NO       YES "Hello, how are you?"
+     70%     YES   0.00      NO       YES "Hello, how are you?"
+     80%     YES   0.00      NO       YES "Hello, how are you?"
+     90%     YES   0.00      NO       YES "Hello, how are you?"
+    100%     YES   0.00      NO       YES "Hello, how are you?"
+
+Sample: EN-S2.wav (Short EN (2.1s))
+Coverage   Match    WER   Trunc  EndMatch Transcript                                        
+--------------------------------------------------------------------------------
+     50%     YES   0.00      NO       YES "What time is the meeting?"
+     60%     YES   0.00      NO       YES "What time is the meeting?"
+     70%     YES   0.00      NO       YES "What time is the meeting?"
+     80%     YES   0.00      NO       YES "What time is the meeting?"
+     90%     YES   0.00      NO       YES "What time is the meeting?"
+    100%     YES   0.00      NO       YES "What time is the meeting?"
+
+Sample: HI-1.wav (Short HI (3.0s))
+Coverage   Match    WER   Trunc  EndMatch Transcript                                        
+--------------------------------------------------------------------------------
+     50%      NO   7.20      NO        NO "नमस्ते आप लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव"
+     60%      NO   0.20     YES        NO "नमस्ती आप के सि..."
+     70%      NO   0.40     YES       YES "नमस्ती अपके से हैं?"
+     80%      NO   0.40     YES       YES "नमस्ती अपके से है।"
+     90%     YES   0.00      NO       YES "नमस्ती आप के से है?"
+    100%     YES   0.00      NO       YES "नमस्ती आप के से है?"
+
+Sample: TECH-1.wav (Medium EN (4.6s))
+Coverage   Match    WER   Trunc  EndMatch Transcript                                        
+--------------------------------------------------------------------------------
+     50%      NO   0.33     YES        NO "We need to deploy our containerized micros..."
+     60%      NO   0.22     YES        NO "We need to deploy our containerized microservice"
+     70%      NO   0.11      NO        NO "We need to deploy our containerized microservice"
+     80%      NO   0.11      NO        NO "We need to deploy our containerized microservice"
+     90%     YES   0.00      NO       YES "We need to deploy our containerized microservice"
+    100%     YES   0.00      NO       YES "We need to deploy our containerized microservice"
+
+Sample: HG-2.wav (Medium HG (5.0s))
+Coverage   Match    WER   Trunc  EndMatch Transcript                                        
+--------------------------------------------------------------------------------
+     50%      NO   0.62      NO       YES "मेर रव़ तो निवाँ परीखाँ हो लाँ है।"
+     60%      NO   0.62     YES       YES "मेर बाँ तो परीड ताखाखाखा है।"
+     70%      NO   4.50      NO       YES "मेर बाच तो परी स्भाथ हो लाँवाथ हो आचाथ हो आचाथ ह"
+     80%      NO   0.38     YES       YES "मेर बातचोँ परी स्भाद हो लाँवाँ है।"
+     90%      NO   0.25      NO       YES "मेर बाँ तो परी साः हो एक है।"
+    100%     YES   0.00      NO       YES "मेर बाँ भाँ परी स्भाद हो एक है।"
+
+Sample: EN-L1.wav (Medium EN (5.9s))
+Coverage   Match    WER   Trunc  EndMatch Transcript                                        
+--------------------------------------------------------------------------------
+     50%      NO   0.38     YES        NO "Hello, what is your name?  What are you-"
+     60%      NO   0.31     YES        NO "Hello, what is your name?  What are you doing?"
+     70%      NO   0.31     YES        NO "Hello, what is your name?  What are you doing?"
+     80%      NO   0.08     YES        NO "Hello, what is your name? What are you doing? Wh"
+     90%     YES   0.00      NO       YES "Hello, what is your name? What are you doing? Wh"
+    100%     YES   0.00      NO       YES "Hello, what is your name?  What are you doing?  "
+
+Sample: EN-L2.wav (Long EN (8.2s))
+Coverage   Match    WER   Trunc  EndMatch Transcript                                        
+--------------------------------------------------------------------------------
+     50%      NO   0.41     YES        NO "Good morning everyone, today we are going to dis"
+     60%      NO   0.32     YES        NO "Good morning everyone, today we are going to dis"
+     70%      NO   0.18     YES        NO "Good morning everyone, today we are going to dis"
+     80%      NO   0.09      NO        NO "Good morning everyone, today we are going to dis"
+     90%     YES   0.00      NO       YES "Good morning everyone, today we are going to dis"
+    100%     YES   0.00      NO       YES "Good morning everyone, today we are going to dis"
+
+Sample: EN-L3.wav (Long EN (9.0s))
+Coverage   Match    WER   Trunc  EndMatch Transcript                                        
+--------------------------------------------------------------------------------
+     50%      NO   0.42     YES        NO "The speech recognition pipeline processes audio "
+     60%      NO   0.32     YES        NO "The speech recognition pipeline processes audio "
+     70%      NO   0.21     YES        NO "The speech recognition pipeline processes audio "
+     80%      NO   0.11     YES        NO "The speech recognition pipeline processes audio "
+     90%     YES   0.00      NO       YES "The speech recognition pipeline processes audio "
+    100%     YES   0.00      NO       YES "The speech recognition pipeline processes audio "
+
+Sample: EN-L5.wav (Long EN (8.7s))
+Coverage   Match    WER   Trunc  EndMatch Transcript                                        
+--------------------------------------------------------------------------------
+     50%      NO   0.48     YES        NO "We observed that running deep learning models on"
+     60%      NO   0.33     YES        NO "We observed that running deep learning models on"
+     70%      NO   0.24     YES        NO "We observed that running deep learning models on"
+     80%      NO   0.10     YES        NO "We observed that running deep learning models on"
+     90%     YES   0.00      NO       YES "We observed that running deep learning models on"
+    100%     YES   0.00      NO       YES "We observed that running deep learning models on"
+
+================================================================================
+REUSABILITY DECISION CURVE & TRADEOFF ANALYSIS
+================================================================================
+If you set smart-finalization threshold T:
+  Threshold >= 50%:
+    - Safe exact reuse rate : 22.2%
+    - Risk of truncating end : 55.6% (average 3.4 trailing words lost)
+    -> [UNSAFE FOR BLIND REUSE] Will cause truncated user sentences 55.6% of the time.
+  Threshold >= 60%:
+    - Safe exact reuse rate : 22.2%
+    - Risk of truncating end : 77.8% (average 3.8 trailing words lost)
+    -> [UNSAFE FOR BLIND REUSE] Will cause truncated user sentences 77.8% of the time.
+  Threshold >= 70%:
+    - Safe exact reuse rate : 22.2%
+    - Risk of truncating end : 55.6% (average 2.1 trailing words lost)
+    -> [UNSAFE FOR BLIND REUSE] Will cause truncated user sentences 55.6% of the time.
+  Threshold >= 80%:
+    - Safe exact reuse rate : 22.2%
+    - Risk of truncating end : 55.6% (average 1.6 trailing words lost)
+    -> [UNSAFE FOR BLIND REUSE] Will cause truncated user sentences 55.6% of the time.
+  Threshold >= 90%:
+    - Safe exact reuse rate : 88.9%
+    - Risk of truncating end : 0.0% (average 0.0 trailing words lost)
+    -> [SAFE THRESHOLD CANDIDATE] Zero truncation observed across test corpus.

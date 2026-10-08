@@ -1,0 +1,112 @@
+======================================================================
+P9 EXP 2 -- Hypothesis Stabilization A/B Test
+Does enabling stabilization change the final transcript or latency?
+======================================================================
+Model=base threads=2
+
+[*] Warmup...
+[+] Done
+
+
+======================================================================
+FILE 1: EN-S1.wav  (duration=2.28s, lang=en)
+  Reference: 'What is the best way to learn machine learning?'
+======================================================================
+
+[A] hypothesis_enabled=False  (P7 default)
+    Final:    'Hello, how are you?'
+    Partials: ['Hello', 'Hello, how are you?']
+    stt_ms:   0.0ms  (fast_path=True)
+    Wall:     6.236s
+
+[B] hypothesis_enabled=True   (P8 default)
+    Final:    'Hello, how are you?'
+    Partials: ['Hello', 'Hello, how are you?']
+    stt_ms:   0.0ms  (fast_path=True)
+    Wall:     7.425s
+
+--- Comparison ---
+  Final transcripts match: YES
+  Partials A: 2 events
+  Partials B: 2 events
+  Wall delta (B-A): +1.189s
+
+======================================================================
+FILE 2: EN-S2.wav  (duration=2.11s, lang=en)
+======================================================================
+
+[A] hypothesis_enabled=False  (P7 default)
+    Final:    'What time is the meeting?'
+    Partials: ['What time is...', 'What time is the meeting?']
+    stt_ms:   3108.9ms  (fast_path=False)
+    Wall:     9.169s
+
+[B] hypothesis_enabled=True   (P8 default)
+    Final:    'What time is the meeting?'
+    Partials: ['What time is...', 'What time is the meeting?']
+    stt_ms:   2991.2ms  (fast_path=False)
+    Wall:     9.391s
+
+--- Comparison ---
+  Final transcripts match: YES
+  Partials A: 2 events
+  Partials B: 2 events
+  Wall delta (B-A): +0.221s
+
+======================================================================
+FILE 3: HI-1.wav  (duration=3.00s, lang=hi)
+======================================================================
+
+[A] hypothesis_enabled=False  (P7 default)
+    Final:    'नमस्ति अपके से है?'
+    Partials: ['नमस्ते', 'नमस्ते ज़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ ल', 'नमस्ती अपके से है?', 'नमस्ति अपके से है?']
+    stt_ms:   0.0ms  (fast_path=True)
+    Wall:     17.223s
+
+[B] hypothesis_enabled=True   (P8 default)
+    Final:    'नमस्ति अपके से है?'
+    Partials: ['नमस्ते', 'नमस्ते ज़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ लव़ ल', 'नमस्ती अपके से है?', 'नमस्ति अपके से है?']
+    stt_ms:   0.0ms  (fast_path=True)
+    Wall:     18.950s
+
+--- Comparison ---
+  Final transcripts match: YES
+  Partials A: 4 events
+  Partials B: 4 events
+  Wall delta (B-A): +1.727s
+
+======================================================================
+FILE 4: TECH-1.wav  (duration=4.63s, lang=en)
+  Reference: 'We need to implement RAG architecture with a vector database.'
+======================================================================
+
+[A] hypothesis_enabled=False  (P7 default)
+    Final:    'We need to deploy our containerized microservices to Kubanades.'
+    Partials: ['We need to...', 'We need to deploy our container.', 'We need to deploy our containerized micro...', 'We need to deploy our containerized microservices to...', 'We need to deploy our containerized microservices to Kubanades.']
+    stt_ms:   0.0ms  (fast_path=True)
+    Wall:     12.404s
+
+[B] hypothesis_enabled=True   (P8 default)
+    Final:    'We need to deploy our containerized microservices to Kubanades.'
+    Partials: ['We need to...', 'We need to deploy our container.', 'We need to deploy our containerized micro...', 'We need to deploy our containerized microservices to...', 'We need to deploy our containerized microservices to Kubanades.']
+    stt_ms:   0.0ms  (fast_path=True)
+    Wall:     10.653s
+
+--- Comparison ---
+  Final transcripts match: YES
+  Partials A: 5 events
+  Partials B: 5 events
+  Wall delta (B-A): -1.751s
+
+======================================================================
+SUMMARY
+======================================================================
+File                  Lang    Dur   FinalMatch   WallDelta
+EN-S1.wav               en  2.28s          YES     +1.189s
+EN-S2.wav               en  2.11s          YES     +0.221s
+HI-1.wav                hi  3.00s          YES     +1.727s
+TECH-1.wav              en  4.63s          YES     -1.751s
+
+KEY FINDINGS:
+  CONFIRMED: hypothesis stabilization does NOT change final transcripts
+  (hypothesis only affects intermediate partial display, not final result)

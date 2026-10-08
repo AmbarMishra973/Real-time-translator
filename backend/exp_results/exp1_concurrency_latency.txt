@@ -1,0 +1,96 @@
+======================================================================
+P9 EXP 1 -- Concurrency Latency Proof
+======================================================================
+Model=base device=cpu compute=int8 threads=2
+
+[*] Warming up model...
+[+] Warmup done
+
+
+======================================================================
+SET: Short English 2.28s  (EN-S1.wav)
+======================================================================
+
+[A] Final-only  (audio=2.28s lang=en)
+    wall=2.497s  rtf=1.10x  transcript='Hello, how are you?'
+
+[B] Sequential partial->final  (partial window=2.28s)
+    partial=1.516s -> 'Hello'
+    final  =1.464s -> 'Hello, how are you?'
+    total  =2.980s
+
+[C] Concurrent partial+final  (simulates P8 actual behavior)
+    partial=3.041s -> 'Hello'
+    final  =3.239s -> 'Hello, how are you?'
+    total  =3.243s
+
+--- Comparison ---
+  A final-only   : 2.497s
+  B seq p->f     : partial=1.516s + final=1.464s = 2.980s
+  C concurrent   : final_wall=3.239s, total_wall=3.243s
+  C.final / A.final slowdown = 1.30x
+  NOTE: No significant slowdown (<1.3x) — check if local CPU has slack
+  QUALITY: transcripts match (concurrent did not change output)
+
+======================================================================
+SET: Hindi 3.00s  (HI-1.wav)
+======================================================================
+
+[A] Final-only  (audio=3.00s lang=hi)
+    wall=1.651s  rtf=0.55x  transcript='नमस्ती आप के से है?'
+
+[B] Sequential partial->final  (partial window=3.00s)
+    partial=2.317s -> 'नमस्ते'
+    final  =2.112s -> 'नमस्ती आप के से है?'
+    total  =4.429s
+
+[C] Concurrent partial+final  (simulates P8 actual behavior)
+    partial=2.921s -> 'नमस्ते'
+    final  =3.500s -> 'नमस्ती आप के से है?'
+    total  =3.505s
+
+--- Comparison ---
+  A final-only   : 1.651s
+  B seq p->f     : partial=2.317s + final=2.112s = 4.429s
+  C concurrent   : final_wall=3.500s, total_wall=3.505s
+  C.final / A.final slowdown = 2.12x
+  *** CONCURRENCY DEGRADES FINAL WHISPER SPEED by 2.12x ***
+  QUALITY: transcripts match (concurrent did not change output)
+
+======================================================================
+SET: Long English 5.88s  (EN-L1.wav)
+======================================================================
+
+[A] Final-only  (audio=5.88s lang=en)
+    wall=1.815s  rtf=0.31x  transcript='Hello, what is your name?  What are you doing?  What is your job?'
+
+[B] Sequential partial->final  (partial window=5.88s)
+    partial=1.532s -> 'Hello, what are-'
+    final  =2.047s -> 'Hello, what is your name?  What are you doing?  What is your job?'
+    total  =3.579s
+
+[C] Concurrent partial+final  (simulates P8 actual behavior)
+    partial=3.155s -> 'Hello, what are-'
+    final  =3.524s -> 'Hello, what is your name?  What are you doing?  What is your job?'
+    total  =3.527s
+
+--- Comparison ---
+  A final-only   : 1.815s
+  B seq p->f     : partial=1.532s + final=2.047s = 3.579s
+  C concurrent   : final_wall=3.524s, total_wall=3.527s
+  C.final / A.final slowdown = 1.94x
+  *** CONCURRENCY DEGRADES FINAL WHISPER SPEED by 1.94x ***
+  QUALITY: transcripts match (concurrent did not change output)
+
+======================================================================
+FINAL TABLE
+======================================================================
+Label                       Audio   A_wall  B_final  C_final   Slowdown  QMatch
+Short English 2.28s         2.28s   2.497s   1.464s   3.239s      1.30x     YES
+Hindi 3.00s                 3.00s   1.651s   2.112s   3.500s      2.12x     YES
+Long English 5.88s          5.88s   1.815s   2.047s   3.524s      1.94x     YES
+
+INTERPRETATION:
+  Slowdown >1.3x -> Concurrency is degrading final Whisper speed (confirms RC-1)
+  QMatch=NO      -> Concurrency also changes transcript (proves quality degradation)
+  QMatch=YES     -> Concurrency affects ONLY latency, not quality
