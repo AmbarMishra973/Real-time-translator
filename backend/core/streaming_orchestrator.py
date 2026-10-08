@@ -56,10 +56,10 @@ class StreamingSession:
         self.vad_enabled = vad_enabled if vad_enabled is not None else (os.getenv("VAD_ENABLED", "false").lower() == "true")
         self.vad_state: VADSessionState = vad_service.create_session_state(session_id=self.session_id)
 
-        # Hypothesis Stabilization configuration (defaults to HYPOTHESIS_STABILIZATION_ENABLED env var)
+        # Hypothesis Stabilization configuration (reverted default to false for P7 compatibility)
         self.hypothesis_enabled = (
             hypothesis_enabled if hypothesis_enabled is not None
-            else (os.getenv("HYPOTHESIS_STABILIZATION_ENABLED", "true").strip().lower() in ("true", "1"))
+            else (os.getenv("HYPOTHESIS_STABILIZATION_ENABLED", "false").strip().lower() in ("true", "1"))
         )
         self.hypothesis_state: HypothesisSessionState = hypothesis_service.create_session_state(session_id=self.session_id)
         self.last_stabilized_result: Optional[HypothesisResult] = None
@@ -69,10 +69,15 @@ class StreamingSession:
         self.first_result_ts: Optional[float] = None
         self.start_ts = time.perf_counter()
 
-        self.is_cancelled = False
-        self.is_evaluating_partial = False
-        self.last_partial_text = ""
-        self.last_partial_bytes_len = 0
+        # Lifecycle coordination state (P10)
+        self.is_cancelled: bool = False
+        self.is_finalizing: bool = False
+        self.is_evaluating_partial: bool = False
+        self.last_partial_text: str = ""
+        self.last_partial_bytes_len: int = 0
+        self.last_partial_turn_id: str = ""
+        self.whisper_lock: asyncio.Lock = asyncio.Lock()
+        self.active_partial_task: Optional[asyncio.Task] = None
 
     def add_chunk(self, chunk: bytes) -> bool:
         """
@@ -100,8 +105,9 @@ class StreamingSession:
         """
         Determines if enough incremental audio has arrived to evaluate a partial transcript.
         When VAD is enabled, avoids scheduling expensive Whisper inference on silence.
+        Guarantees that no partial can trigger once finalization or cancellation starts.
         """
-        if self.is_cancelled or self.is_evaluating_partial:
+        if self.is_cancelled or self.is_finalizing or self.is_evaluating_partial:
             return False
 
         cur_len = len(self.buffer)
@@ -131,9 +137,12 @@ class StreamingSession:
         self.first_result_ts = None
         self.start_ts = time.perf_counter()
         self.is_cancelled = False
+        self.is_finalizing = False
         self.is_evaluating_partial = False
         self.last_partial_text = ""
         self.last_partial_bytes_len = 0
+        self.last_partial_turn_id = ""
+        self.active_partial_task = None
         self.vad_state.reset_for_next_turn()
         self.hypothesis_state.reset_for_next_turn()
         self.last_stabilized_result = None
@@ -185,39 +194,48 @@ class StreamingOrchestrator:
         """
         Executes non-blocking incremental transcription on currently accumulated audio.
         Applies hypothesis stabilization / local agreement when enabled.
-        Returns text if new/updated intermediate tokens found, else None.
+        Enforces lifecycle coordination: never executes if session is finalizing or cancelled,
+        and acquires session.whisper_lock to prevent any concurrency with finalization.
         """
-        if session.is_cancelled or len(session.buffer) < DEFAULT_MIN_PARTIAL_BYTES:
+        if session.is_cancelled or session.is_finalizing or len(session.buffer) < DEFAULT_MIN_PARTIAL_BYTES:
+            session.is_evaluating_partial = False
             return None
 
-        session.is_evaluating_partial = True
         snapshot = bytes(session.buffer)
-        session.last_partial_bytes_len = len(snapshot)
+        turn_id = session.request_id
 
         t_start = time.perf_counter()
+        partial_text = ""
         try:
-            partial_text = await asyncio.to_thread(
-                self.stt.transcribe_partial,
-                audio_bytes=snapshot,
-                lang=session.language,
-                session_id=session.session_id,
-                request_id=session.request_id,
-                reason="partial_stream"
-            )
-        except Exception as e:
+            async with session.whisper_lock:
+                # Re-check session state once lock is held
+                if session.is_cancelled or session.is_finalizing:
+                    return None
+
+                partial_text = await asyncio.to_thread(
+                    self.stt.transcribe_partial,
+                    audio_bytes=snapshot,
+                    lang=session.language,
+                    session_id=session.session_id,
+                    request_id=session.request_id,
+                    reason="partial_stream"
+                )
+        except Exception:
             partial_text = ""
         finally:
             session.is_evaluating_partial = False
 
-        if session.is_cancelled:
+        if session.is_cancelled or session.is_finalizing:
             return None
 
         clean_text = (partial_text or "").strip()
-        if clean_text and clean_text != session.last_partial_text:
+        if clean_text and clean_text != session.last_partial_text and session.request_id == turn_id:
             if session.first_result_ts is None:
                 session.first_result_ts = time.perf_counter()
 
             session.last_partial_text = clean_text
+            session.last_partial_bytes_len = len(snapshot)
+            session.last_partial_turn_id = turn_id
 
             if session.hypothesis_enabled:
                 stab_res = hypothesis_service.process_hypothesis(clean_text, session.hypothesis_state)
@@ -240,60 +258,78 @@ class StreamingOrchestrator:
         """
         Executes authoritative final transcription (with Phase 1 signal conditioning & gating)
         followed by RAG retrieval and LLM translation.
+        Enforces lifecycle coordination:
+        1. Atomically sets is_finalizing = True (stops all new partial scheduling).
+        2. Acquires session.whisper_lock to cleanly await/drain any in-flight partial before final pass.
+        3. Reuses completed partial ONLY if coverage >= 90% (empirically validated threshold) and valid.
+        4. Otherwise executes single-pass authoritative Whisper on full audio buffer without concurrency.
         """
         if session.is_cancelled:
             return {"type": "cancelled", "request_id": session.request_id}
 
+        # 1. Atomically mark session as finalizing to prevent ANY new partial dispatch
+        session.is_finalizing = True
+
         t_final_start = time.perf_counter()
         audio_snapshot = bytes(session.buffer)
+        buffer_len = len(audio_snapshot)
 
-        stream_log("final_transcription_started", session.request_id, buffer_bytes=len(audio_snapshot))
+        stream_log("final_transcription_started", session.request_id, buffer_bytes=buffer_len)
 
-        # 1. Authoritative STT with Phase 8 Smart Finalization
-        buffer_len = len(session.buffer)
         enable_smart_finalize = os.getenv("STREAM_SMART_FINALIZE", "true").lower() in ("true", "1")
-        can_fast_path = (
-            enable_smart_finalize
-            and session.last_partial_bytes_len >= (buffer_len * 0.90)
-            and bool(session.last_partial_text)
-            and any(c.isalnum() for c in session.last_partial_text)
-        )
 
+        # 2. Acquire session whisper_lock. This cleanly waits for any in-flight partial
+        # to finish executing on CPU before proceeding. No orphaned concurrency!
         t_stt_start = time.perf_counter()
-        if can_fast_path:
-            transcript = session.last_partial_text
-            engine_used = "local"
-            model_used = self.stt.model_size
-            info = SimpleNamespace(language=session.language, language_probability=1.0, language_source="streaming_partial")
-            diagnostics = {"is_silent_gate": False, "gate_reason": None, "fast_path": True}
-            t_stt_s = time.perf_counter() - t_stt_start
-            stream_log(
-                "final_transcription_fast_path",
-                session.request_id,
-                transcript=transcript,
-                coverage_pct=round(session.last_partial_bytes_len / max(1, buffer_len) * 100, 1),
-                stt_ms=round(t_stt_s * 1000, 1)
+        async with session.whisper_lock:
+            if session.is_cancelled:
+                return {"type": "cancelled", "request_id": session.request_id}
+
+            # 3. Check for valid partial reuse with empirical >=90% threshold
+            can_fast_path = (
+                enable_smart_finalize
+                and buffer_len > 0
+                and session.last_partial_turn_id == session.request_id
+                and session.last_partial_bytes_len >= (buffer_len * 0.90)
+                and bool(session.last_partial_text)
+                and any(c.isalnum() for c in session.last_partial_text)
             )
-        else:
-            try:
-                transcript, info, diagnostics, engine_used, model_used = await asyncio.to_thread(
-                    self.stt.transcribe,
-                    audio_bytes=audio_snapshot,
-                    lang=session.language,
-                    filename="stream_recording.wav",
-                    content_type="audio/wav",
-                    session_id=session.session_id,
-                    request_id=session.request_id,
-                    reason="final_stream"
+
+            if can_fast_path:
+                transcript = session.last_partial_text
+                engine_used = "local"
+                model_used = self.stt.model_size
+                info = SimpleNamespace(language=session.language, language_probability=1.0, language_source="streaming_partial")
+                diagnostics = {"is_silent_gate": False, "gate_reason": None, "fast_path": True}
+                t_stt_s = time.perf_counter() - t_stt_start
+                stream_log(
+                    "final_transcription_fast_path",
+                    session.request_id,
+                    transcript=transcript,
+                    coverage_pct=round(session.last_partial_bytes_len / max(1, buffer_len) * 100, 1),
+                    stt_ms=round(t_stt_s * 1000, 1)
                 )
-            except Exception as exc:
-                stream_log("final_stt_error", session.request_id, error=str(exc))
-                return {
-                    "type": "error",
-                    "request_id": session.request_id,
-                    "message": f"Transcription error: {str(exc)}"
-                }
-            t_stt_s = time.perf_counter() - t_stt_start
+            else:
+                try:
+                    transcript, info, diagnostics, engine_used, model_used = await asyncio.to_thread(
+                        self.stt.transcribe,
+                        audio_bytes=audio_snapshot,
+                        lang=session.language,
+                        filename="stream_recording.wav",
+                        content_type="audio/wav",
+                        session_id=session.session_id,
+                        request_id=session.request_id,
+                        reason="final_stream"
+                    )
+                except Exception as exc:
+                    stream_log("final_stt_error", session.request_id, error=str(exc))
+                    return {
+                        "type": "error",
+                        "request_id": session.request_id,
+                        "message": f"Transcription error: {str(exc)}"
+                    }
+                t_stt_s = time.perf_counter() - t_stt_start
+
         if session.first_result_ts is None and transcript:
             session.first_result_ts = time.perf_counter()
 
@@ -443,6 +479,7 @@ class StreamingOrchestrator:
     def cancel_stream(self, session: StreamingSession) -> Dict[str, Any]:
         """Instant cancellation of active turn and buffer release."""
         session.is_cancelled = True
+        session.is_finalizing = True
         session.buffer.clear()
         stream_log("stream_cancelled", session.request_id, session_id=session.session_id)
         return {

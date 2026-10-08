@@ -120,13 +120,16 @@ async def websocket_streaming_endpoint(websocket: WebSocket):
                     session.reset_for_next_turn()
 
                 elif msg_type == "end":
-                    # Finalize audio turn
+                    # Finalize audio turn: coordinate lifecycle so in-flight partial drains cleanly
+                    session.is_finalizing = True
+                    final_res = await streaming_orchestrator.finalize_stream(session)
+                    await websocket.send_json(final_res)
+
+                    # Drain background tasks after finalization
                     for task in list(background_tasks):
                         task.cancel()
                     background_tasks.clear()
 
-                    final_res = await streaming_orchestrator.finalize_stream(session)
-                    await websocket.send_json(final_res)
                     # Prepare session for potential subsequent utterance
                     session.reset_for_next_turn()
 
@@ -155,7 +158,7 @@ async def websocket_streaming_endpoint(websocket: WebSocket):
                     async def evaluate_and_emit(s: StreamingSession):
                         try:
                             partial = await streaming_orchestrator.evaluate_partial(s)
-                            if partial and not s.is_cancelled:
+                            if partial and not s.is_cancelled and not s.is_finalizing:
                                 payload = {
                                     "type": "partial",
                                     "text": partial,
@@ -172,6 +175,7 @@ async def websocket_streaming_endpoint(websocket: WebSocket):
                             pass
 
                     t = asyncio.create_task(evaluate_and_emit(session))
+                    session.active_partial_task = t
                     background_tasks.add(t)
                     t.add_done_callback(background_tasks.discard)
 
