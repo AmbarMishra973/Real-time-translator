@@ -1,0 +1,398 @@
+{
+  "timestamp": "20261008_153543",
+  "benchmark_phase": "Phase 7: Final Integrated Benchmark & Production Freeze",
+  "verdict": "STABLE / IMPROVED FUNCTIONALITY",
+  "stt_safety_invariant": {
+    "historical_exact_match_pct": 85.71,
+    "historical_mean_wer": 0.0952,
+    "pass_gate": true,
+    "statement": "No regression observed on the frozen benchmark."
+  },
+  "configuration_snapshot": {
+    "os": "Windows 11 (AMD64)",
+    "python_version": "3.13.7",
+    "cpu_processor": "Intel64 Family 6 Model 142 Stepping 10, GenuineIntel",
+    "stt_engine": "Faster-Whisper (base on cpu, compute_type=int8)",
+    "audio_preprocessing": "in_memory (FFmpeg via RAM pipes, zero disk temp files)",
+    "vad_engine": "Silero VAD v5 ONNX (Available, default: false per Phase 2 verdict)",
+    "hypothesis_stabilization": "Local Agreement (2 consecutive agreements, min 1 token)",
+    "translation_engine": "Groq LPU (qwen/qwen3.8-27b) with multi-tier local fallback cascade",
+    "rag_mode": "Selective RAG (Deterministic boundary regex gate + TF-IDF score verification >= 0.35)",
+    "tts_engine": "Edge-TTS (en-US-JennyNeural / hi-IN-SwaraNeural)",
+    "feature_flags": {
+      "SELECTIVE_RAG_ENABLED": "true",
+      "RAG_MODE": "selective",
+      "VAD_ENABLED": "false",
+      "HYPOTHESIS_STABILIZATION_ENABLED": "true",
+      "TTS_ENGINE": "edge",
+      "TRANSLATION_ENGINE": "groq"
+    }
+  },
+  "stt_results": {
+    "exact_matches": "6/7",
+    "exact_pct": 85.71,
+    "mean_wer": 0.0952,
+    "latencies_ms": {
+      "mean": 3289.98,
+      "p50": 2816.02,
+      "p95": 7125.77
+    },
+    "cases": [
+      {
+        "id": "EN-1",
+        "category": "English Conversational",
+        "expected": "Hello",
+        "transcript": "Hello.",
+        "exact_match": true,
+        "wer": 0.0,
+        "latency_ms": 2491.86
+      },
+      {
+        "id": "EN-2",
+        "category": "English Conversational",
+        "expected": "What is your name?",
+        "transcript": "What is your name?",
+        "exact_match": true,
+        "wer": 0.0,
+        "latency_ms": 2555.36
+      },
+      {
+        "id": "EN-3",
+        "category": "English Conversational",
+        "expected": "How are you doing today?",
+        "transcript": "How are you doing today?",
+        "exact_match": true,
+        "wer": 0.0,
+        "latency_ms": 2860.22
+      },
+      {
+        "id": "HI-1",
+        "category": "Hindi Conversational",
+        "expected": "आपका नाम क्या है?",
+        "transcript": "आपका नाम क्या है?",
+        "exact_match": true,
+        "wer": 0.0,
+        "latency_ms": 2816.02
+      },
+      {
+        "id": "HI-2",
+        "category": "Hindi Conversational",
+        "expected": "आप कैसे हैं?",
+        "transcript": "आप वाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवा�",
+        "exact_match": false,
+        "wer": 0.6667,
+        "latency_ms": 7125.77
+      },
+      {
+        "id": "TECH-1",
+        "category": "Technical English",
+        "expected": "We need to implement a vector database with RAG.",
+        "transcript": "We need to implement a vector database with RAG.",
+        "exact_match": true,
+        "wer": 0.0,
+        "latency_ms": 2356.74
+      },
+      {
+        "id": "TECH-2",
+        "category": "Technical English",
+        "expected": "Kubernetes orchestration.",
+        "transcript": "Kubernetes orchestration.",
+        "exact_match": true,
+        "wer": 0.0,
+        "latency_ms": 2823.88
+      }
+    ]
+  },
+  "e2e_results": {
+    "total_e2e_ms": {
+      "mean": 5531.2,
+      "p50": 5496.54,
+      "p95": 7420.53,
+      "min": 4510.54,
+      "max": 7420.53
+    },
+    "stage_latencies_ms": {
+      "preprocessing_mean": 0.24,
+      "stt_mean": 3115.87,
+      "rag_mean": 2.88,
+      "translation_mean": 325.57,
+      "tts_mean": 2086.14
+    },
+    "stage_latency_percentages": {
+      "preprocessing_pct": 0.0,
+      "stt_pct": 56.3,
+      "rag_pct": 0.1,
+      "translation_pct": 5.9,
+      "tts_pct": 37.7
+    },
+    "cases": [
+      {
+        "id": "EN-1",
+        "category": "English Conversational",
+        "source_text": "Hello.",
+        "translated_text": "नमस्ते।",
+        "context_used": false,
+        "total_e2e_ms": 5496.54,
+        "stages": {
+          "prep_ms": 0.07,
+          "stt_ms": 2745.51,
+          "rag_ms": 0.04,
+          "trans_ms": 695.0,
+          "tts_ms": 2055.0
+        }
+      },
+      {
+        "id": "EN-2",
+        "category": "English Conversational",
+        "source_text": "What is your name?",
+        "translated_text": "आपका नाम क्या है?",
+        "context_used": false,
+        "total_e2e_ms": 5738.65,
+        "stages": {
+          "prep_ms": 0.32,
+          "stt_ms": 3066.93,
+          "rag_ms": 0.03,
+          "trans_ms": 271.0,
+          "tts_ms": 2400.0
+        }
+      },
+      {
+        "id": "EN-3",
+        "category": "English Conversational",
+        "source_text": "How are you doing today?",
+        "translated_text": "आज आप कैसे हैं?",
+        "context_used": false,
+        "total_e2e_ms": 5427.08,
+        "stages": {
+          "prep_ms": 0.12,
+          "stt_ms": 3137.3,
+          "rag_ms": 0.05,
+          "trans_ms": 496.0,
+          "tts_ms": 1793.0
+        }
+      },
+      {
+        "id": "HI-1",
+        "category": "Hindi Conversational",
+        "source_text": "आपका नाम क्या है?",
+        "translated_text": "What is your name?",
+        "context_used": false,
+        "total_e2e_ms": 4588.45,
+        "stages": {
+          "prep_ms": 0.12,
+          "stt_ms": 2319.5,
+          "rag_ms": 0.04,
+          "trans_ms": 138.0,
+          "tts_ms": 2131.0
+        }
+      },
+      {
+        "id": "HI-2",
+        "category": "Hindi Conversational",
+        "source_text": "आप वाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवा�",
+        "translated_text": "You",
+        "context_used": false,
+        "total_e2e_ms": 7420.53,
+        "stages": {
+          "prep_ms": 0.5,
+          "stt_ms": 5236.9,
+          "rag_ms": 0.05,
+          "trans_ms": 354.0,
+          "tts_ms": 1829.0
+        }
+      },
+      {
+        "id": "TECH-1",
+        "category": "Technical English",
+        "source_text": "We need to implement a vector database with RAG.",
+        "translated_text": "हमें RAG के साथ एक वेक्टर डेटाबेस को लागू करना होगा।",
+        "context_used": true,
+        "total_e2e_ms": 5536.6,
+        "stages": {
+          "prep_ms": 0.11,
+          "stt_ms": 2993.73,
+          "rag_ms": 15.56,
+          "trans_ms": 179.0,
+          "tts_ms": 2347.0
+        }
+      },
+      {
+        "id": "TECH-2",
+        "category": "Technical English",
+        "source_text": "Kubernetes orchestration.",
+        "translated_text": "Kubernetes ऑर्केस्ट्रेशन",
+        "context_used": true,
+        "total_e2e_ms": 4510.54,
+        "stages": {
+          "prep_ms": 0.44,
+          "stt_ms": 2311.21,
+          "rag_ms": 4.38,
+          "trans_ms": 146.0,
+          "tts_ms": 2048.0
+        }
+      }
+    ]
+  },
+  "resource_benchmark": {
+    "start_ram_mb": 301.46,
+    "mem_before_leak_audit_mb": 322.32,
+    "mem_after_leak_audit_mb": 322.38,
+    "net_leak_delta_mb": 0.06
+  },
+  "cumulative_table": [
+    {
+      "metric": "STT Exact Match",
+      "p0": "85.71%",
+      "p1": "85.71%",
+      "p2": "85.71%",
+      "p3": "85.71%",
+      "p4": "85.71%",
+      "p5": "85.71%",
+      "p6": "85.71%",
+      "final": "85.71%"
+    },
+    {
+      "metric": "STT WER",
+      "p0": "0.0952",
+      "p1": "0.0952",
+      "p2": "0.0952",
+      "p3": "0.0952",
+      "p4": "0.0952",
+      "p5": "0.0952",
+      "p6": "0.0952",
+      "final": "0.0952"
+    },
+    {
+      "metric": "First Partial (p50)",
+      "p0": "1951.3 ms",
+      "p1": "N/A",
+      "p2": "2201.9 ms",
+      "p3": "1829.4 ms",
+      "p4": "N/A",
+      "p5": "N/A",
+      "p6": "N/A",
+      "final": "1829.4 ms"
+    },
+    {
+      "metric": "Final STT (p50)",
+      "p0": "2448.7 ms",
+      "p1": "2066.5 ms",
+      "p2": "2152.5 ms",
+      "p3": "1992.2 ms",
+      "p4": "N/A",
+      "p5": "N/A",
+      "p6": "N/A",
+      "final": "2816.02 ms"
+    },
+    {
+      "metric": "Translation (p50)",
+      "p0": "196.1 ms (fallback)",
+      "p1": "N/A",
+      "p2": "N/A",
+      "p3": "N/A",
+      "p4": "2304.6 ms",
+      "p5": "N/A",
+      "p6": "2217.0 ms",
+      "final": "2217.0 ms"
+    },
+    {
+      "metric": "Translation (p95)",
+      "p0": "1093.4 ms",
+      "p1": "N/A",
+      "p2": "N/A",
+      "p3": "N/A",
+      "p4": "2712.8 ms",
+      "p5": "N/A",
+      "p6": "2544.0 ms",
+      "final": "2544.0 ms"
+    },
+    {
+      "metric": "TTS TTFA (p50)",
+      "p0": "N/A",
+      "p1": "N/A",
+      "p2": "N/A",
+      "p3": "N/A",
+      "p4": "N/A",
+      "p5": "1678.4 ms",
+      "p6": "N/A",
+      "final": "1678.4 ms"
+    },
+    {
+      "metric": "TTS Total (p50)",
+      "p0": "2225.9 ms",
+      "p1": "N/A",
+      "p2": "N/A",
+      "p3": "N/A",
+      "p4": "N/A",
+      "p5": "2183.0 ms",
+      "p6": "N/A",
+      "final": "2055.0 ms"
+    },
+    {
+      "metric": "E2E Turnaround (p50)",
+      "p0": "8853.5 ms",
+      "p1": "N/A",
+      "p2": "9378.8 ms",
+      "p3": "8585.1 ms",
+      "p4": "N/A",
+      "p5": "N/A",
+      "p6": "N/A",
+      "final": "5496.54 ms"
+    },
+    {
+      "metric": "Streaming E2E (mean)",
+      "p0": "12807.5 ms",
+      "p1": "N/A",
+      "p2": "9550.3 ms",
+      "p3": "8932.3 ms",
+      "p4": "N/A",
+      "p5": "N/A",
+      "p6": "N/A",
+      "final": "5531.2 ms"
+    },
+    {
+      "metric": "Visible Revisions/turn",
+      "p0": "1.27",
+      "p1": "N/A",
+      "p2": "N/A",
+      "p3": "0.64",
+      "p4": "N/A",
+      "p5": "N/A",
+      "p6": "N/A",
+      "final": "0.64"
+    },
+    {
+      "metric": "RAG Hit@1 / Terms",
+      "p0": "85.0%",
+      "p1": "N/A",
+      "p2": "N/A",
+      "p3": "N/A",
+      "p4": "60.0%",
+      "p5": "N/A",
+      "p6": "60.0%",
+      "final": "60.0%"
+    },
+    {
+      "metric": "RAG Latency (mean)",
+      "p0": "3.20 ms",
+      "p1": "N/A",
+      "p2": "N/A",
+      "p3": "N/A",
+      "p4": "8.51 ms",
+      "p5": "N/A",
+      "p6": "3.09 ms",
+      "final": "3.09 ms"
+    },
+    {
+      "metric": "Process RAM",
+      "p0": "456.1 MB",
+      "p1": "273.9 MB",
+      "p2": "275.1 MB",
+      "p3": "224.5 MB",
+      "p4": "303.3 MB",
+      "p5": "427.1 MB",
+      "p6": "30.2 MB",
+      "final": "322.38 MB"
+    }
+  ]
+}
