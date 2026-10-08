@@ -1,0 +1,254 @@
+{
+  "benchmark": "phase_2_standalone_vad_benchmark",
+  "timestamp": "2026-10-08T10:29:29.072814",
+  "environment": {
+    "python_version": "3.13.7",
+    "os": "Windows-11",
+    "architecture": "AMD64"
+  },
+  "config": {
+    "threshold": 0.5,
+    "min_speech_duration_ms": 100,
+    "min_silence_duration_ms": 600,
+    "speech_pad_ms": 150,
+    "hangover_ms": 300,
+    "chunk_size_ms": 250
+  },
+  "startup": {
+    "startup_latency_ms": 281.67,
+    "first_inference_latency_ms": 16.56
+  },
+  "confusion_matrix": {
+    "tp": 14,
+    "tn": 3,
+    "fp": 0,
+    "fn": 0,
+    "accuracy": 1.0,
+    "sensitivity": 1.0,
+    "specificity": 1.0,
+    "fp_rate": 0.0,
+    "fn_rate": 0.0
+  },
+  "endpointing": {
+    "premature_endpoints": 0,
+    "mean_endpoint_delay_ms": -122.0,
+    "endpoint_delays_ms": [
+      -122.0
+    ]
+  },
+  "latency_stats": {
+    "n": 174,
+    "mean": 3.34,
+    "p50": 2.62,
+    "p95": 5.66,
+    "min": 0.55,
+    "max": 37.6,
+    "std": 3.96
+  },
+  "case_results": [
+    {
+      "id": "A_ENG_NORMAL",
+      "category": "Normal English",
+      "description": "Conversational question ('What is your name?')",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.998,
+      "detected_speech_chunks": 4,
+      "total_chunks": 8,
+      "endpoint_offset_ms": 1750.0,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "B_HIN_NORMAL_1",
+      "category": "Normal Hindi",
+      "description": "Conversational Hindi ('\u0906\u092a\u0915\u093e \u0928\u093e\u092e \u0915\u094d\u092f\u093e \u0939\u0948?')",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.997,
+      "detected_speech_chunks": 6,
+      "total_chunks": 10,
+      "endpoint_offset_ms": 2250.0,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "B_HIN_NORMAL_2",
+      "category": "Normal Hindi",
+      "description": "Conversational Hindi ('\u0906\u092a \u0915\u0948\u0938\u0947 \u0939\u0948\u0902?')",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.999,
+      "detected_speech_chunks": 5,
+      "total_chunks": 8,
+      "endpoint_offset_ms": null,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "C_SHORT_HELLO",
+      "category": "Short Speech",
+      "description": "Short single-word utterance ('Hello')",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.991,
+      "detected_speech_chunks": 3,
+      "total_chunks": 8,
+      "endpoint_offset_ms": 1500.0,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "C_SHORT_TIGHT",
+      "category": "Short Speech",
+      "description": "Very short 450ms utterance ('Hi / Yes')",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.981,
+      "detected_speech_chunks": 2,
+      "total_chunks": 2,
+      "endpoint_offset_ms": null,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "D_QUIET_45DB",
+      "category": "Quiet Speech",
+      "description": "Attenuated conversational English at -45 dBFS",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.997,
+      "detected_speech_chunks": 4,
+      "total_chunks": 8,
+      "endpoint_offset_ms": 1750.0,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "D_QUIET_52DB_HI",
+      "category": "Quiet Speech",
+      "description": "Soft Hindi speech at -52 dBFS",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.83,
+      "detected_speech_chunks": 2,
+      "total_chunks": 8,
+      "endpoint_offset_ms": 1750.0,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "E_SPEECH_PAUSE",
+      "category": "Speech with Pauses",
+      "description": "Two clauses separated by an internal 800ms natural pause",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.999,
+      "detected_speech_chunks": 8,
+      "total_chunks": 19,
+      "endpoint_offset_ms": 1500.0,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "F_LONG_DOCKER_K8S",
+      "category": "Long Speech",
+      "description": "Continuous natural technical sentence ('We deployed the backend...')",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 1.0,
+      "detected_speech_chunks": 16,
+      "total_chunks": 19,
+      "endpoint_offset_ms": null,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "G_TRAILING_SILENCE_1S",
+      "category": "Trailing Silence",
+      "description": "Speech followed by 1000ms trailing silence to measure endpoint trigger",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.998,
+      "detected_speech_chunks": 4,
+      "total_chunks": 12,
+      "endpoint_offset_ms": 1750.0,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "H_LEADING_SILENCE_800MS",
+      "category": "Leading Silence",
+      "description": "800ms initial silence before user speaks",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.999,
+      "detected_speech_chunks": 4,
+      "total_chunks": 11,
+      "endpoint_offset_ms": 2500.0,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "I_PURE_SILENCE_1S",
+      "category": "Silence / Noise Floor",
+      "description": "1.0s pure digital silence",
+      "ground_truth_has_speech": false,
+      "vad_detected_speech": false,
+      "peak_probability": 0.012,
+      "detected_speech_chunks": 0,
+      "total_chunks": 4,
+      "endpoint_offset_ms": null,
+      "status": "TN (PASS)"
+    },
+    {
+      "id": "I_NOISE_FLOOR_55DB",
+      "category": "Silence / Noise Floor",
+      "description": "1.5s stationary ambient noise floor at -55 dBFS",
+      "ground_truth_has_speech": false,
+      "vad_detected_speech": false,
+      "peak_probability": 0.054,
+      "detected_speech_chunks": 0,
+      "total_chunks": 6,
+      "endpoint_offset_ms": null,
+      "status": "TN (PASS)"
+    },
+    {
+      "id": "I_NOISE_FLOOR_65DB",
+      "category": "Silence / Noise Floor",
+      "description": "2.0s quiet room noise floor at -65 dBFS",
+      "ground_truth_has_speech": false,
+      "vad_detected_speech": false,
+      "peak_probability": 0.028,
+      "detected_speech_chunks": 0,
+      "total_chunks": 8,
+      "endpoint_offset_ms": null,
+      "status": "TN (PASS)"
+    },
+    {
+      "id": "J_TECH_RAG",
+      "category": "Technical Speech",
+      "description": "Vector database with RAG ('We need to implement a vector database with RAG.')",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 0.999,
+      "detected_speech_chunks": 11,
+      "total_chunks": 15,
+      "endpoint_offset_ms": 3500.0,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "J_TECH_K8S",
+      "category": "Technical Speech",
+      "description": "Kubernetes orchestration ('Kubernetes orchestration.')",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 1.0,
+      "detected_speech_chunks": 7,
+      "total_chunks": 10,
+      "endpoint_offset_ms": null,
+      "status": "TP (PASS)"
+    },
+    {
+      "id": "J_TECH_HTTP404",
+      "category": "Technical Speech",
+      "description": "HTTP 404 numerical error code ('The web server returned HTTP 404 error code.')",
+      "ground_truth_has_speech": true,
+      "vad_detected_speech": true,
+      "peak_probability": 1.0,
+      "detected_speech_chunks": 14,
+      "total_chunks": 18,
+      "endpoint_offset_ms": 4250.0,
+      "status": "TP (PASS)"
+    }
+  ]
+}
