@@ -56,7 +56,7 @@ class StreamingSession:
         # Hypothesis Stabilization configuration (defaults to HYPOTHESIS_STABILIZATION_ENABLED env var)
         self.hypothesis_enabled = (
             hypothesis_enabled if hypothesis_enabled is not None
-            else (os.getenv("HYPOTHESIS_STABILIZATION_ENABLED", "false").lower() == "true")
+            else (os.getenv("HYPOTHESIS_STABILIZATION_ENABLED", "true").strip().lower() in ("true", "1"))
         )
         self.hypothesis_state: HypothesisSessionState = hypothesis_service.create_session_state(session_id=self.session_id)
         self.last_stabilized_result: Optional[HypothesisResult] = None

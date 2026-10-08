@@ -305,7 +305,7 @@ function App() {
     setSttNotice('Recording cancelled.');
   };
 
-  // Client-side translation resolver: Guarantees translation correctness even under cloud server 429 rate-limits
+  // Client-side translation resolver: Provides client-side fallback rescue if server returns an empty or echoed translation
   const resolveTranslation = async (sourceText, serverTranslation, src, tgt) => {
     let result = (serverTranslation || '').trim();
     const srcBase = (src || 'en').split('-')[0].toLowerCase();

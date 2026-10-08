@@ -19,7 +19,7 @@ from typing import List, Dict, Any, Optional, Tuple
 class HypothesisConfig:
     """Configuration parameters for Hypothesis Stabilization / Local Agreement."""
     enabled: bool = field(
-        default_factory=lambda: os.getenv("HYPOTHESIS_STABILIZATION_ENABLED", "false").strip().lower() == "true"
+        default_factory=lambda: os.getenv("HYPOTHESIS_STABILIZATION_ENABLED", "true").strip().lower() in ("true", "1")
     )
     min_agreements: int = field(
         default_factory=lambda: int(os.getenv("STABILITY_MIN_AGREEMENTS", "2"))

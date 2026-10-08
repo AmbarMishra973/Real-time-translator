@@ -86,7 +86,7 @@ def boost_quiet_pcm16_wav(
     Adaptive peak-safe gain boost for quiet PCM16 audio.
     - Preserves true silence (< -60.0 dBFS) to avoid amplifying the room noise floor.
     - Skips audio already at or above trigger_dbfs (default -38.0 dBFS).
-    - Clamps applied gain so peak + gain never exceeds -1.0 dBFS (guaranteed 1 dB headroom).
+    - Clamps applied gain so peak + gain never exceeds -1.0 dBFS (maintaining 1 dBFS peak headroom limit).
     - Exact byte match returned if no gain is applied.
     """
     with wave.open(BytesIO(wav_bytes), "rb") as wav_file:
