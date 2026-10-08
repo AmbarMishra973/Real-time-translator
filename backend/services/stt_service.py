@@ -34,10 +34,13 @@ SUSPECTED_HALLUCINATIONS = {
 }
 
 
-def convert_to_clean_wav(audio_bytes: bytes, suffix: str = ".bin") -> bytes:
+import struct
+
+
+def convert_to_clean_wav_control(audio_bytes: bytes, suffix: str = ".bin") -> bytes:
     """
-    Converts and resamples incoming browser audio (WebM, OGG, MP4, WAV, etc.)
-    into clean 16kHz mono WAV PCM with guaranteed temporary file cleanup.
+    Production Control Path: Converts incoming audio into 16kHz mono WAV PCM
+    using temporary disk files.
     """
     in_path = None
     out_path = None
@@ -84,6 +87,90 @@ def convert_to_clean_wav(audio_bytes: bytes, suffix: str = ".bin") -> bytes:
                     pass
 
     raise ValueError("Audio conversion failed; verify that FFmpeg supports the uploaded audio format.")
+
+
+def convert_to_clean_wav_in_memory(audio_bytes: bytes, suffix: str = ".bin") -> bytes:
+    """
+    Experimental In-Memory Path (Phase 1): Converts and resamples incoming audio into
+    clean 16kHz mono WAV PCM without disk I/O, using FFmpeg stdin/stdout streaming pipes
+    and in-memory RIFF/data chunk header patching.
+    Fast-paths audio that is already valid 16kHz mono 16-bit PCM WAV.
+    """
+    if not audio_bytes or len(audio_bytes) < 44:
+        raise ValueError("Audio data is empty or too short.")
+
+    # 1. Fast-path: Check if already valid 16kHz mono 16-bit PCM WAV
+    if os.getenv("STT_NORMALIZE_AUDIO", "false").lower() != "true":
+        if audio_bytes[:4] == b"RIFF" and audio_bytes[8:12] == b"WAVE":
+            try:
+                import wave
+                with wave.open(io.BytesIO(audio_bytes), "rb") as wf:
+                    if (
+                        wf.getnchannels() == 1
+                        and wf.getsampwidth() == 2
+                        and wf.getframerate() == 16000
+                        and wf.getcomptype() == "NONE"
+                    ):
+                        return audio_bytes
+            except Exception:
+                pass
+
+    # 2. In-memory streaming via FFmpeg pipe:0 -> pipe:1
+    cmd = [
+        "ffmpeg", "-y",
+        "-err_detect", "ignore_err",
+        "-i", "pipe:0",
+        "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
+    ]
+    if os.getenv("STT_NORMALIZE_AUDIO", "false").lower() == "true":
+        cmd.extend(["-af", "dynaudnorm=p=0.9:s=5"])
+    cmd.extend(["-f", "wav", "pipe:1"])
+
+    res = subprocess.run(cmd, input=audio_bytes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if res.returncode == 0 and len(res.stdout) > 44:
+        raw_out = bytearray(res.stdout)
+        # Patch unseekable pipe streaming header (0xFFFFFFFF in RIFF size and data size)
+        riff_len = len(raw_out) - 8
+        raw_out[4:8] = struct.pack("<I", riff_len)
+        data_idx = raw_out.find(b"data")
+        if data_idx != -1:
+            data_len = len(raw_out) - (data_idx + 8)
+            raw_out[data_idx + 4 : data_idx + 8] = struct.pack("<I", data_len)
+        if len(raw_out) > 100:
+            return bytes(raw_out)
+
+    # 3. Fallback without extra flags
+    cmd_fallback = [
+        "ffmpeg", "-y",
+        "-i", "pipe:0",
+        "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
+        "-f", "wav", "pipe:1",
+    ]
+    res2 = subprocess.run(cmd_fallback, input=audio_bytes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if res2.returncode == 0 and len(res2.stdout) > 44:
+        raw_out = bytearray(res2.stdout)
+        riff_len = len(raw_out) - 8
+        raw_out[4:8] = struct.pack("<I", riff_len)
+        data_idx = raw_out.find(b"data")
+        if data_idx != -1:
+            data_len = len(raw_out) - (data_idx + 8)
+            raw_out[data_idx + 4 : data_idx + 8] = struct.pack("<I", data_len)
+        return bytes(raw_out)
+
+    raise ValueError("Audio conversion failed; verify that FFmpeg supports the uploaded audio format.")
+
+
+def convert_to_clean_wav(audio_bytes: bytes, suffix: str = ".bin") -> bytes:
+    """
+    Converts and resamples incoming browser audio (WebM, OGG, MP4, WAV, etc.)
+    into clean 16kHz mono WAV PCM.
+    Dispatches to control (disk-based) or in_memory path based on AUDIO_PIPELINE_MODE.
+    Default mode: 'control' (preserves production behavior).
+    """
+    mode = os.getenv("AUDIO_PIPELINE_MODE", "control").strip().lower()
+    if mode == "in_memory":
+        return convert_to_clean_wav_in_memory(audio_bytes, suffix)
+    return convert_to_clean_wav_control(audio_bytes, suffix)
 
 
 def parse_capture_metadata(raw_metadata: Optional[str]) -> dict:

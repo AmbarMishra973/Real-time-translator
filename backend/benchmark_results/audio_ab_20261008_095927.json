@@ -1,0 +1,746 @@
+{
+  "benchmark": "phase_1_hardened_audio_ab_experiment",
+  "timestamp": "2026-10-08T09:59:27.662686",
+  "environment": {
+    "python_version": "3.13.7",
+    "os": "Windows-11",
+    "architecture": "AMD64",
+    "processor": "Intel64 Family 6 Model 142 Stepping 10, GenuineIntel",
+    "initial_process_ram_mb": 287.54,
+    "final_process_ram_mb": 273.86
+  },
+  "configuration": {
+    "model_size": "base",
+    "device": "cpu",
+    "compute_type": "int8",
+    "repetitions": 5,
+    "interleaved_patterns": [
+      [
+        "control",
+        "in_memory"
+      ],
+      [
+        "in_memory",
+        "control"
+      ],
+      [
+        "in_memory",
+        "control"
+      ],
+      [
+        "control",
+        "in_memory"
+      ],
+      [
+        "control",
+        "in_memory"
+      ]
+    ]
+  },
+  "audio_integrity": {
+    "EN-1": {
+      "control": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 29952,
+        "duration_s": 1.872,
+        "rms_dbfs": -22.4,
+        "peak_dbfs": -3.3,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 1.872,
+        "pcm_length_bytes": 59904
+      },
+      "in_memory": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 29952,
+        "duration_s": 1.872,
+        "rms_dbfs": -22.4,
+        "peak_dbfs": -3.3,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 1.872,
+        "pcm_length_bytes": 59904
+      },
+      "pcm_exact_match": true,
+      "sr_match": true,
+      "ch_match": true,
+      "bit_match": true,
+      "duration_match": true
+    },
+    "EN-2": {
+      "control": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 29952,
+        "duration_s": 1.872,
+        "rms_dbfs": -22.8,
+        "peak_dbfs": -3.7,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 1.872,
+        "pcm_length_bytes": 59904
+      },
+      "in_memory": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 29952,
+        "duration_s": 1.872,
+        "rms_dbfs": -22.8,
+        "peak_dbfs": -3.7,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 1.872,
+        "pcm_length_bytes": 59904
+      },
+      "pcm_exact_match": true,
+      "sr_match": true,
+      "ch_match": true,
+      "bit_match": true,
+      "duration_match": true
+    },
+    "EN-3": {
+      "control": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 33024,
+        "duration_s": 2.064,
+        "rms_dbfs": -21.6,
+        "peak_dbfs": -5.3,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 2.064,
+        "pcm_length_bytes": 66048
+      },
+      "in_memory": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 33024,
+        "duration_s": 2.064,
+        "rms_dbfs": -21.6,
+        "peak_dbfs": -5.3,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 2.064,
+        "pcm_length_bytes": 66048
+      },
+      "pcm_exact_match": true,
+      "sr_match": true,
+      "ch_match": true,
+      "bit_match": true,
+      "duration_match": true
+    },
+    "HI-1": {
+      "control": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 36480,
+        "duration_s": 2.28,
+        "rms_dbfs": -21.6,
+        "peak_dbfs": -4.8,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 2.28,
+        "pcm_length_bytes": 72960
+      },
+      "in_memory": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 36480,
+        "duration_s": 2.28,
+        "rms_dbfs": -21.6,
+        "peak_dbfs": -4.8,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 2.28,
+        "pcm_length_bytes": 72960
+      },
+      "pcm_exact_match": true,
+      "sr_match": true,
+      "ch_match": true,
+      "bit_match": true,
+      "duration_match": true
+    },
+    "HI-2": {
+      "control": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 31872,
+        "duration_s": 1.992,
+        "rms_dbfs": -25.1,
+        "peak_dbfs": -5.7,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 1.992,
+        "pcm_length_bytes": 63744
+      },
+      "in_memory": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 31872,
+        "duration_s": 1.992,
+        "rms_dbfs": -25.1,
+        "peak_dbfs": -5.7,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 1.992,
+        "pcm_length_bytes": 63744
+      },
+      "pcm_exact_match": true,
+      "sr_match": true,
+      "ch_match": true,
+      "bit_match": true,
+      "duration_match": true
+    },
+    "TECH-1": {
+      "control": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 57984,
+        "duration_s": 3.624,
+        "rms_dbfs": -20.6,
+        "peak_dbfs": -5.0,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 3.624,
+        "pcm_length_bytes": 115968
+      },
+      "in_memory": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 57984,
+        "duration_s": 3.624,
+        "rms_dbfs": -20.6,
+        "peak_dbfs": -5.0,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 3.624,
+        "pcm_length_bytes": 115968
+      },
+      "pcm_exact_match": true,
+      "sr_match": true,
+      "ch_match": true,
+      "bit_match": true,
+      "duration_match": true
+    },
+    "TECH-2": {
+      "control": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 38784,
+        "duration_s": 2.424,
+        "rms_dbfs": -21.9,
+        "peak_dbfs": -5.6,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 2.424,
+        "pcm_length_bytes": 77568
+      },
+      "in_memory": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 38784,
+        "duration_s": 2.424,
+        "rms_dbfs": -21.9,
+        "peak_dbfs": -5.6,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 2.424,
+        "pcm_length_bytes": 77568
+      },
+      "pcm_exact_match": true,
+      "sr_match": true,
+      "ch_match": true,
+      "bit_match": true,
+      "duration_match": true
+    },
+    "NUM-1": {
+      "control": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 69504,
+        "duration_s": 4.344,
+        "rms_dbfs": -21.5,
+        "peak_dbfs": -2.5,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 4.344,
+        "pcm_length_bytes": 139008
+      },
+      "in_memory": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 69504,
+        "duration_s": 4.344,
+        "rms_dbfs": -21.5,
+        "peak_dbfs": -2.5,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 4.344,
+        "pcm_length_bytes": 139008
+      },
+      "pcm_exact_match": true,
+      "sr_match": true,
+      "ch_match": true,
+      "bit_match": true,
+      "duration_match": true
+    },
+    "LONG-1": {
+      "control": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 75648,
+        "duration_s": 4.728,
+        "rms_dbfs": -22.2,
+        "peak_dbfs": -3.3,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 4.728,
+        "pcm_length_bytes": 151296
+      },
+      "in_memory": {
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_depth": 16,
+        "frames": 75648,
+        "duration_s": 4.728,
+        "rms_dbfs": -22.2,
+        "peak_dbfs": -3.3,
+        "gain_db_applied": 0.0,
+        "padded_duration_s": 4.728,
+        "pcm_length_bytes": 151296
+      },
+      "pcm_exact_match": true,
+      "sr_match": true,
+      "ch_match": true,
+      "bit_match": true,
+      "duration_match": true
+    }
+  },
+  "cold_start": {
+    "control": 2142.864,
+    "in_memory": 2106.973,
+    "delta_ms": -35.89
+  },
+  "streaming_partials": [
+    {
+      "case_id": "EN-1",
+      "control": {
+        "mode": "control",
+        "partial_text": "Hello",
+        "prep_ms": 451.842,
+        "stt_ms": 1901.845,
+        "total_ms": 2353.7
+      },
+      "in_memory": {
+        "mode": "in_memory",
+        "partial_text": "Hello",
+        "prep_ms": 75.674,
+        "stt_ms": 1863.849,
+        "total_ms": 1939.534
+      },
+      "prep_delta_ms": -376.17,
+      "total_delta_ms": -414.17,
+      "match": true
+    },
+    {
+      "case_id": "EN-2",
+      "control": {
+        "mode": "control",
+        "partial_text": "What is your name?",
+        "prep_ms": 101.944,
+        "stt_ms": 1922.6,
+        "total_ms": 2024.569
+      },
+      "in_memory": {
+        "mode": "in_memory",
+        "partial_text": "What is your name?",
+        "prep_ms": 80.249,
+        "stt_ms": 1916.817,
+        "total_ms": 1997.073
+      },
+      "prep_delta_ms": -21.7,
+      "total_delta_ms": -27.5,
+      "match": true
+    },
+    {
+      "case_id": "EN-3",
+      "control": {
+        "mode": "control",
+        "partial_text": "How are you doing today?",
+        "prep_ms": 108.372,
+        "stt_ms": 1929.105,
+        "total_ms": 2037.484
+      },
+      "in_memory": {
+        "mode": "in_memory",
+        "partial_text": "How are you doing today?",
+        "prep_ms": 80.028,
+        "stt_ms": 2151.648,
+        "total_ms": 2231.683
+      },
+      "prep_delta_ms": -28.34,
+      "total_delta_ms": 194.2,
+      "match": true
+    },
+    {
+      "case_id": "HI-1",
+      "control": {
+        "mode": "control",
+        "partial_text": "\u0906\u092a\u0915\u093e \u0928\u093e\u092e \u0915\u094d\u092f\u093e \u0939\u0948?",
+        "prep_ms": 98.141,
+        "stt_ms": 2121.294,
+        "total_ms": 2219.441
+      },
+      "in_memory": {
+        "mode": "in_memory",
+        "partial_text": "\u0906\u092a\u0915\u093e \u0928\u093e\u092e \u0915\u094d\u092f\u093e \u0939\u0948?",
+        "prep_ms": 75.054,
+        "stt_ms": 2106.668,
+        "total_ms": 2181.729
+      },
+      "prep_delta_ms": -23.09,
+      "total_delta_ms": -37.71,
+      "match": true
+    },
+    {
+      "case_id": "HI-2",
+      "control": {
+        "mode": "control",
+        "partial_text": "\u0905\u092a\u0915\u0947 \u0938\u0947 \u0939\u0948\u0964",
+        "prep_ms": 103.35,
+        "stt_ms": 2086.612,
+        "total_ms": 2189.969
+      },
+      "in_memory": {
+        "mode": "in_memory",
+        "partial_text": "\u0905\u092a\u0915\u0947 \u0938\u0947 \u0939\u0948\u0964",
+        "prep_ms": 70.499,
+        "stt_ms": 2437.215,
+        "total_ms": 2507.72
+      },
+      "prep_delta_ms": -32.85,
+      "total_delta_ms": 317.75,
+      "match": true
+    },
+    {
+      "case_id": "TECH-1",
+      "control": {
+        "mode": "control",
+        "partial_text": "We need to implement a vector database with RAG.",
+        "prep_ms": 107.808,
+        "stt_ms": 2223.638,
+        "total_ms": 2331.453
+      },
+      "in_memory": {
+        "mode": "in_memory",
+        "partial_text": "We need to implement a vector database with RAG.",
+        "prep_ms": 81.192,
+        "stt_ms": 2853.44,
+        "total_ms": 2934.637
+      },
+      "prep_delta_ms": -26.62,
+      "total_delta_ms": 603.18,
+      "match": true
+    },
+    {
+      "case_id": "TECH-2",
+      "control": {
+        "mode": "control",
+        "partial_text": "Kubernetes orchestration.",
+        "prep_ms": 95.39,
+        "stt_ms": 2081.182,
+        "total_ms": 2176.578
+      },
+      "in_memory": {
+        "mode": "in_memory",
+        "partial_text": "Kubernetes orchestration.",
+        "prep_ms": 72.86,
+        "stt_ms": 2011.687,
+        "total_ms": 2084.552
+      },
+      "prep_delta_ms": -22.53,
+      "total_delta_ms": -92.03,
+      "match": true
+    },
+    {
+      "case_id": "NUM-1",
+      "control": {
+        "mode": "control",
+        "partial_text": "The web server returned HTTP 404 error code.",
+        "prep_ms": 118.528,
+        "stt_ms": 2065.976,
+        "total_ms": 2184.51
+      },
+      "in_memory": {
+        "mode": "in_memory",
+        "partial_text": "The web server returned HTTP 404 error code.",
+        "prep_ms": 83.741,
+        "stt_ms": 2105.596,
+        "total_ms": 2189.344
+      },
+      "prep_delta_ms": -34.79,
+      "total_delta_ms": 4.83,
+      "match": true
+    },
+    {
+      "case_id": "LONG-1",
+      "control": {
+        "mode": "control",
+        "partial_text": "We deployed the back end service using Docker containers and Kubernetes.",
+        "prep_ms": 124.776,
+        "stt_ms": 2286.425,
+        "total_ms": 2411.208
+      },
+      "in_memory": {
+        "mode": "in_memory",
+        "partial_text": "We deployed the back end service using Docker containers and Kubernetes.",
+        "prep_ms": 86.313,
+        "stt_ms": 2105.019,
+        "total_ms": 2191.337
+      },
+      "prep_delta_ms": -38.46,
+      "total_delta_ms": -219.87,
+      "match": true
+    }
+  ],
+  "memory_leak_test": {
+    "ram_before_mb": 273.45,
+    "ram_after_mb": 273.47,
+    "delta_mb": 0.02
+  },
+  "aggregates": {
+    "audio_preprocessing": {
+      "control": {
+        "n": 45,
+        "mean": 110.34,
+        "p50": 106.1,
+        "p95": 130.38,
+        "min": 94.07,
+        "max": 186.86,
+        "std": 16.64
+      },
+      "in_memory": {
+        "n": 45,
+        "mean": 79.75,
+        "p50": 78.74,
+        "p95": 89.06,
+        "min": 72.09,
+        "max": 97.7,
+        "std": 5.3
+      },
+      "delta_mean_ms": -30.59,
+      "delta_p50_ms": -27.36,
+      "delta_p95_ms": -41.32
+    },
+    "ffmpeg_conversion": {
+      "control": {
+        "n": 45,
+        "mean": 107.13,
+        "p50": 103.64,
+        "p95": 128.25,
+        "min": 91.61,
+        "max": 185.05,
+        "std": 16.75
+      },
+      "in_memory": {
+        "n": 45,
+        "mean": 79.67,
+        "p50": 78.65,
+        "p95": 88.95,
+        "min": 72.03,
+        "max": 97.61,
+        "std": 5.3
+      },
+      "delta_mean_ms": -27.46
+    },
+    "whisper_inference": {
+      "control": {
+        "n": 45,
+        "mean": 2067.74,
+        "p50": 2066.28,
+        "p95": 2215.63,
+        "min": 1847.2,
+        "max": 2756.24,
+        "std": 142.96
+      },
+      "in_memory": {
+        "n": 45,
+        "mean": 2074.45,
+        "p50": 2066.51,
+        "p95": 2341.39,
+        "min": 1812.41,
+        "max": 2514.18,
+        "std": 144.68
+      },
+      "delta_mean_ms": 6.71,
+      "delta_p50_ms": 0.23
+    },
+    "total_pipeline": {
+      "control": {
+        "n": 45,
+        "mean": 2224.87,
+        "p50": 2209.03,
+        "p95": 2433.56,
+        "min": 1983.02,
+        "max": 2889.26,
+        "std": 150.96
+      },
+      "in_memory": {
+        "n": 45,
+        "mean": 2207.49,
+        "p50": 2201.39,
+        "p95": 2488.47,
+        "min": 1928.68,
+        "max": 2670.56,
+        "std": 154.97
+      },
+      "delta_mean_ms": -17.38,
+      "delta_p50_ms": -7.64,
+      "delta_p95_ms": 54.91
+    },
+    "accuracy": {
+      "control_exact_pct": 77.78,
+      "in_memory_exact_pct": 77.78,
+      "control_mean_wer": 0.0963,
+      "in_memory_mean_wer": 0.0963,
+      "category_breakdown": {
+        "English Conversational": {
+          "control_wer": 0.0,
+          "in_memory_wer": 0.0,
+          "control_exact": "10/10",
+          "in_memory_exact": "10/10"
+        },
+        "English Conversational (Short)": {
+          "control_wer": 0.0,
+          "in_memory_wer": 0.0,
+          "control_exact": "5/5",
+          "in_memory_exact": "5/5"
+        },
+        "Hindi Conversational": {
+          "control_wer": 0.3333,
+          "in_memory_wer": 0.3333,
+          "control_exact": "5/10",
+          "in_memory_exact": "5/10"
+        },
+        "Longer Natural Utterance": {
+          "control_wer": 0.2,
+          "in_memory_wer": 0.2,
+          "control_exact": "0/5",
+          "in_memory_exact": "0/5"
+        },
+        "Technical English": {
+          "control_wer": 0.0,
+          "in_memory_wer": 0.0,
+          "control_exact": "10/10",
+          "in_memory_exact": "10/10"
+        },
+        "Technical with Numbers": {
+          "control_wer": 0.0,
+          "in_memory_wer": 0.0,
+          "control_exact": "5/5",
+          "in_memory_exact": "5/5"
+        }
+      },
+      "historical_7_case": {
+        "control_exact": "30/35",
+        "in_memory_exact": "30/35",
+        "control_wer": 0.0952,
+        "in_memory_wer": 0.0952
+      }
+    }
+  },
+  "execution_order": [
+    "EN-1_control_r0",
+    "EN-1_in_memory_r0",
+    "EN-2_control_r0",
+    "EN-2_in_memory_r0",
+    "EN-3_control_r0",
+    "EN-3_in_memory_r0",
+    "HI-1_control_r0",
+    "HI-1_in_memory_r0",
+    "HI-2_control_r0",
+    "HI-2_in_memory_r0",
+    "TECH-1_control_r0",
+    "TECH-1_in_memory_r0",
+    "TECH-2_control_r0",
+    "TECH-2_in_memory_r0",
+    "NUM-1_control_r0",
+    "NUM-1_in_memory_r0",
+    "LONG-1_control_r0",
+    "LONG-1_in_memory_r0",
+    "EN-1_in_memory_r1",
+    "EN-1_control_r1",
+    "EN-2_in_memory_r1",
+    "EN-2_control_r1",
+    "EN-3_in_memory_r1",
+    "EN-3_control_r1",
+    "HI-1_in_memory_r1",
+    "HI-1_control_r1",
+    "HI-2_in_memory_r1",
+    "HI-2_control_r1",
+    "TECH-1_in_memory_r1",
+    "TECH-1_control_r1",
+    "TECH-2_in_memory_r1",
+    "TECH-2_control_r1",
+    "NUM-1_in_memory_r1",
+    "NUM-1_control_r1",
+    "LONG-1_in_memory_r1",
+    "LONG-1_control_r1",
+    "EN-1_in_memory_r2",
+    "EN-1_control_r2",
+    "EN-2_in_memory_r2",
+    "EN-2_control_r2",
+    "EN-3_in_memory_r2",
+    "EN-3_control_r2",
+    "HI-1_in_memory_r2",
+    "HI-1_control_r2",
+    "HI-2_in_memory_r2",
+    "HI-2_control_r2",
+    "TECH-1_in_memory_r2",
+    "TECH-1_control_r2",
+    "TECH-2_in_memory_r2",
+    "TECH-2_control_r2",
+    "NUM-1_in_memory_r2",
+    "NUM-1_control_r2",
+    "LONG-1_in_memory_r2",
+    "LONG-1_control_r2",
+    "EN-1_control_r3",
+    "EN-1_in_memory_r3",
+    "EN-2_control_r3",
+    "EN-2_in_memory_r3",
+    "EN-3_control_r3",
+    "EN-3_in_memory_r3",
+    "HI-1_control_r3",
+    "HI-1_in_memory_r3",
+    "HI-2_control_r3",
+    "HI-2_in_memory_r3",
+    "TECH-1_control_r3",
+    "TECH-1_in_memory_r3",
+    "TECH-2_control_r3",
+    "TECH-2_in_memory_r3",
+    "NUM-1_control_r3",
+    "NUM-1_in_memory_r3",
+    "LONG-1_control_r3",
+    "LONG-1_in_memory_r3",
+    "EN-1_control_r4",
+    "EN-1_in_memory_r4",
+    "EN-2_control_r4",
+    "EN-2_in_memory_r4",
+    "EN-3_control_r4",
+    "EN-3_in_memory_r4",
+    "HI-1_control_r4",
+    "HI-1_in_memory_r4",
+    "HI-2_control_r4",
+    "HI-2_in_memory_r4",
+    "TECH-1_control_r4",
+    "TECH-1_in_memory_r4",
+    "TECH-2_control_r4",
+    "TECH-2_in_memory_r4",
+    "NUM-1_control_r4",
+    "NUM-1_in_memory_r4",
+    "LONG-1_control_r4",
+    "LONG-1_in_memory_r4"
+  ]
+}
