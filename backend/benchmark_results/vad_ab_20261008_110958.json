@@ -1,0 +1,280 @@
+{
+  "benchmark": "phase_2_hardened_vad_ab_experiment",
+  "timestamp": "2026-10-08T11:09:58.748006",
+  "environment": {
+    "python_version": "3.13.7",
+    "os": "Windows-11",
+    "architecture": "AMD64",
+    "initial_process_ram_mb": 301.88,
+    "final_process_ram_mb": 221.41
+  },
+  "config": {
+    "vad_threshold": 0.5,
+    "min_speech_duration_ms": 100,
+    "min_silence_duration_ms": 600,
+    "speech_pad_ms": 150,
+    "hangover_ms": 300,
+    "repetitions": 3,
+    "interleaved_patterns": [
+      [
+        false,
+        true
+      ],
+      [
+        true,
+        false
+      ],
+      [
+        false,
+        true
+      ]
+    ]
+  },
+  "cold_start": {
+    "control": {
+      "vad_enabled": false,
+      "chunks_sent": 8,
+      "partial_calls_executed": 2,
+      "partial_compute_ms_total": 4341.4,
+      "first_partial_latency_ms": 2384.56,
+      "first_partial_text": "Hello",
+      "final_stt_ms": 2201.38,
+      "total_turn_ms": 6542.91,
+      "transcript": "Hello.",
+      "endpoint_detected_at_ms": null,
+      "total_whisper_calls": 3,
+      "total_whisper_compute_ms": 6542.78
+    },
+    "with_vad": {
+      "vad_enabled": true,
+      "chunks_sent": 8,
+      "partial_calls_executed": 2,
+      "partial_compute_ms_total": 4401.84,
+      "first_partial_latency_ms": 2176.4,
+      "first_partial_text": "Hello",
+      "final_stt_ms": 2599.82,
+      "total_turn_ms": 7045.07,
+      "transcript": "Hello.",
+      "endpoint_detected_at_ms": 2189.88,
+      "total_whisper_calls": 3,
+      "total_whisper_compute_ms": 7001.66
+    }
+  },
+  "efficiency": {
+    "total_calls_ctrl": 141,
+    "total_calls_vad": 141,
+    "calls_avoided": 0,
+    "pct_calls_avoided": 0.0,
+    "total_compute_ctrl_ms": 308828.26,
+    "total_compute_vad_ms": 313799.92,
+    "compute_saved_ms": -4971.66,
+    "pct_compute_saved": -1.61
+  },
+  "aggregates": {
+    "whisper_calls_per_turn": {
+      "control": {
+        "n": 33,
+        "mean": 4.27,
+        "p50": 4,
+        "p95": 7,
+        "min": 3,
+        "max": 7,
+        "std": 1.31
+      },
+      "with_vad": {
+        "n": 33,
+        "mean": 4.27,
+        "p50": 4,
+        "p95": 7,
+        "min": 3,
+        "max": 7,
+        "std": 1.31
+      }
+    },
+    "partial_calls_per_turn": {
+      "control": {
+        "n": 33,
+        "mean": 3.27,
+        "p50": 3,
+        "p95": 6,
+        "min": 2,
+        "max": 6,
+        "std": 1.31
+      },
+      "with_vad": {
+        "n": 33,
+        "mean": 3.27,
+        "p50": 3,
+        "p95": 6,
+        "min": 2,
+        "max": 6,
+        "std": 1.31
+      }
+    },
+    "whisper_compute_ms": {
+      "control": {
+        "n": 33,
+        "mean": 9358.43,
+        "p50": 8819.23,
+        "p95": 16111.45,
+        "min": 4901.57,
+        "max": 16614.45,
+        "std": 3175.66
+      },
+      "with_vad": {
+        "n": 33,
+        "mean": 9509.09,
+        "p50": 9342.98,
+        "p95": 14898.85,
+        "min": 5526.18,
+        "max": 19081.67,
+        "std": 3255.87
+      }
+    },
+    "final_stt_ms": {
+      "control": {
+        "n": 33,
+        "mean": 2471.81,
+        "p50": 2236.21,
+        "p95": 5585.6,
+        "min": 1739.35,
+        "max": 5599.7,
+        "std": 961.43
+      },
+      "with_vad": {
+        "n": 33,
+        "mean": 2438.99,
+        "p50": 2152.47,
+        "p95": 4535.56,
+        "min": 1805.09,
+        "max": 4597.04,
+        "std": 718.32
+      }
+    },
+    "total_turnaround_ms": {
+      "control": {
+        "n": 33,
+        "mean": 9358.65,
+        "p50": 8819.41,
+        "p95": 16111.72,
+        "min": 4901.71,
+        "max": 16614.58,
+        "std": 3175.7
+      },
+      "with_vad": {
+        "n": 33,
+        "mean": 9550.26,
+        "p50": 9378.83,
+        "p95": 14920.21,
+        "min": 5549.72,
+        "max": 19147.45,
+        "std": 3261.81
+      }
+    },
+    "first_partial_latency_ms": {
+      "control": {
+        "n": 33,
+        "mean": 2513.22,
+        "p50": 1817.29,
+        "p95": 5459.72,
+        "min": 1528.52,
+        "max": 5758.07,
+        "std": 1233.14
+      },
+      "with_vad": {
+        "n": 33,
+        "mean": 2684.96,
+        "p50": 2201.86,
+        "p95": 4918.76,
+        "min": 1563.21,
+        "max": 5456.84,
+        "std": 1157.93
+      }
+    },
+    "accuracy": {
+      "control_exact_pct": 77.78,
+      "with_vad_exact_pct": 77.78,
+      "control_mean_wer": 0.0963,
+      "with_vad_mean_wer": 0.0963,
+      "historical_7_case": {
+        "control_exact": "18/21",
+        "with_vad_exact": "18/21",
+        "control_wer": 0.0952,
+        "with_vad_wer": 0.0952
+      }
+    }
+  },
+  "memory_leak_audit": {
+    "ram_before_mb": 221.26,
+    "ram_after_mb": 221.29,
+    "net_delta_mb": 0.03
+  },
+  "execution_order": [
+    "EN-1_novad_r0",
+    "EN-1_vad_r0",
+    "EN-2_novad_r0",
+    "EN-2_vad_r0",
+    "EN-3_novad_r0",
+    "EN-3_vad_r0",
+    "HI-1_novad_r0",
+    "HI-1_vad_r0",
+    "HI-2_novad_r0",
+    "HI-2_vad_r0",
+    "TECH-1_novad_r0",
+    "TECH-1_vad_r0",
+    "TECH-2_novad_r0",
+    "TECH-2_vad_r0",
+    "NUM-1_novad_r0",
+    "NUM-1_vad_r0",
+    "LONG-1_novad_r0",
+    "LONG-1_vad_r0",
+    "LEAD_SIL_EN2_novad_r0",
+    "LEAD_SIL_EN2_vad_r0",
+    "TRAIL_SIL_EN2_novad_r0",
+    "TRAIL_SIL_EN2_vad_r0",
+    "EN-1_vad_r1",
+    "EN-1_novad_r1",
+    "EN-2_vad_r1",
+    "EN-2_novad_r1",
+    "EN-3_vad_r1",
+    "EN-3_novad_r1",
+    "HI-1_vad_r1",
+    "HI-1_novad_r1",
+    "HI-2_vad_r1",
+    "HI-2_novad_r1",
+    "TECH-1_vad_r1",
+    "TECH-1_novad_r1",
+    "TECH-2_vad_r1",
+    "TECH-2_novad_r1",
+    "NUM-1_vad_r1",
+    "NUM-1_novad_r1",
+    "LONG-1_vad_r1",
+    "LONG-1_novad_r1",
+    "LEAD_SIL_EN2_vad_r1",
+    "LEAD_SIL_EN2_novad_r1",
+    "TRAIL_SIL_EN2_vad_r1",
+    "TRAIL_SIL_EN2_novad_r1",
+    "EN-1_novad_r2",
+    "EN-1_vad_r2",
+    "EN-2_novad_r2",
+    "EN-2_vad_r2",
+    "EN-3_novad_r2",
+    "EN-3_vad_r2",
+    "HI-1_novad_r2",
+    "HI-1_vad_r2",
+    "HI-2_novad_r2",
+    "HI-2_vad_r2",
+    "TECH-1_novad_r2",
+    "TECH-1_vad_r2",
+    "TECH-2_novad_r2",
+    "TECH-2_vad_r2",
+    "NUM-1_novad_r2",
+    "NUM-1_vad_r2",
+    "LONG-1_novad_r2",
+    "LONG-1_vad_r2",
+    "LEAD_SIL_EN2_novad_r2",
+    "LEAD_SIL_EN2_vad_r2",
+    "TRAIL_SIL_EN2_novad_r2",
+    "TRAIL_SIL_EN2_vad_r2"
+  ]
+}
