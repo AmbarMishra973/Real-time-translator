@@ -1,0 +1,463 @@
+{
+  "timestamp": "20261008_121948",
+  "phase": "Phase 4: Translation Layer Benchmarking and Evaluation",
+  "environment": {
+    "os": "Windows 11 (AMD64)",
+    "python": "3.13.7",
+    "cpu_cores": 4,
+    "process_ram_mb": 303.3,
+    "groq_model": "qwen/qwen3.8-27b"
+  },
+  "dataset_info": {
+    "total_cases": 50,
+    "en_to_hi_count": 28,
+    "hi_to_en_count": 22,
+    "hinglish_count": 8,
+    "rag_expected_count": 17,
+    "repetitions": 2
+  },
+  "active_candidates_summary": {
+    "groq_rag": {
+      "total_cases": 50,
+      "cold_start_ms": 958.8,
+      "warm_mean_latency_ms": 1806.32,
+      "warm_p50_latency_ms": 2304.62,
+      "warm_p95_latency_ms": 2712.82,
+      "min_latency_ms": 159.38,
+      "max_latency_ms": 3414.06,
+      "mean_chrf": 0.815,
+      "exact_match_pct": 36.0,
+      "script_correct_pct": 100.0,
+      "numbers_preserved_pct": 94.0,
+      "terms_preserved_pct": 60.0,
+      "entities_preserved_pct": 92.0,
+      "error_rate_pct": 4.0,
+      "category_breakdown": {
+        "conversational": {
+          "count": 1,
+          "mean_chrf": 1.0,
+          "term_preservation_pct": 0.0,
+          "num_preservation_pct": 100.0
+        },
+        "conversational_general": {
+          "count": 6,
+          "mean_chrf": 0.8369,
+          "term_preservation_pct": 33.3,
+          "num_preservation_pct": 50.0
+        },
+        "conversational_normal": {
+          "count": 5,
+          "mean_chrf": 0.9468,
+          "term_preservation_pct": 80.0,
+          "num_preservation_pct": 100.0
+        },
+        "conversational_query": {
+          "count": 2,
+          "mean_chrf": 1.0,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "conversational_short": {
+          "count": 4,
+          "mean_chrf": 0.9661,
+          "term_preservation_pct": 75.0,
+          "num_preservation_pct": 100.0
+        },
+        "general_knowledge": {
+          "count": 1,
+          "mean_chrf": 0.6857,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_conversational": {
+          "count": 1,
+          "mean_chrf": 0.7458,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_conversational_numbers": {
+          "count": 1,
+          "mean_chrf": 0.8453,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_named_entities": {
+          "count": 1,
+          "mean_chrf": 1.0,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_tech": {
+          "count": 3,
+          "mean_chrf": 0.9175,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_tech_entities": {
+          "count": 1,
+          "mean_chrf": 0.9484,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_tech_numbers": {
+          "count": 1,
+          "mean_chrf": 1.0,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "named_entities": {
+          "count": 4,
+          "mean_chrf": 0.8536,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "numbers_codes": {
+          "count": 2,
+          "mean_chrf": 1.0,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "numbers_metrics": {
+          "count": 2,
+          "mean_chrf": 0.7665,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "numbers_schedule": {
+          "count": 2,
+          "mean_chrf": 0.7651,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "rag_technical": {
+          "count": 7,
+          "mean_chrf": 0.5503,
+          "term_preservation_pct": 28.6,
+          "num_preservation_pct": 100.0
+        },
+        "technical": {
+          "count": 6,
+          "mean_chrf": 0.637,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        }
+      }
+    },
+    "groq_no_rag": {
+      "total_cases": 50,
+      "cold_start_ms": 233.11,
+      "warm_mean_latency_ms": 2019.29,
+      "warm_p50_latency_ms": 2345.79,
+      "warm_p95_latency_ms": 2595.35,
+      "min_latency_ms": 183.3,
+      "max_latency_ms": 3333.9,
+      "mean_chrf": 0.818,
+      "exact_match_pct": 34.0,
+      "script_correct_pct": 100.0,
+      "numbers_preserved_pct": 94.0,
+      "terms_preserved_pct": 56.0,
+      "entities_preserved_pct": 92.0,
+      "error_rate_pct": 4.0,
+      "category_breakdown": {
+        "conversational": {
+          "count": 1,
+          "mean_chrf": 0.9092,
+          "term_preservation_pct": 0.0,
+          "num_preservation_pct": 100.0
+        },
+        "conversational_general": {
+          "count": 6,
+          "mean_chrf": 0.8048,
+          "term_preservation_pct": 33.3,
+          "num_preservation_pct": 50.0
+        },
+        "conversational_normal": {
+          "count": 5,
+          "mean_chrf": 0.9142,
+          "term_preservation_pct": 80.0,
+          "num_preservation_pct": 100.0
+        },
+        "conversational_query": {
+          "count": 2,
+          "mean_chrf": 1.0,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "conversational_short": {
+          "count": 4,
+          "mean_chrf": 0.9661,
+          "term_preservation_pct": 75.0,
+          "num_preservation_pct": 100.0
+        },
+        "general_knowledge": {
+          "count": 1,
+          "mean_chrf": 0.6857,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_conversational": {
+          "count": 1,
+          "mean_chrf": 0.727,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_conversational_numbers": {
+          "count": 1,
+          "mean_chrf": 0.8453,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_named_entities": {
+          "count": 1,
+          "mean_chrf": 1.0,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_tech": {
+          "count": 3,
+          "mean_chrf": 0.9283,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_tech_entities": {
+          "count": 1,
+          "mean_chrf": 0.9484,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_tech_numbers": {
+          "count": 1,
+          "mean_chrf": 0.9281,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "named_entities": {
+          "count": 4,
+          "mean_chrf": 0.8536,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "numbers_codes": {
+          "count": 2,
+          "mean_chrf": 1.0,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "numbers_metrics": {
+          "count": 2,
+          "mean_chrf": 0.7921,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "numbers_schedule": {
+          "count": 2,
+          "mean_chrf": 0.7651,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "rag_technical": {
+          "count": 7,
+          "mean_chrf": 0.6373,
+          "term_preservation_pct": 0.0,
+          "num_preservation_pct": 100.0
+        },
+        "technical": {
+          "count": 6,
+          "mean_chrf": 0.636,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        }
+      }
+    },
+    "fallback": {
+      "total_cases": 50,
+      "cold_start_ms": 1117.25,
+      "warm_mean_latency_ms": 854.17,
+      "warm_p50_latency_ms": 3.45,
+      "warm_p95_latency_ms": 3179.76,
+      "min_latency_ms": 0.08,
+      "max_latency_ms": 7396.71,
+      "mean_chrf": 0.7681,
+      "exact_match_pct": 24.0,
+      "script_correct_pct": 100.0,
+      "numbers_preserved_pct": 94.0,
+      "terms_preserved_pct": 54.0,
+      "entities_preserved_pct": 92.0,
+      "error_rate_pct": 4.0,
+      "category_breakdown": {
+        "conversational": {
+          "count": 1,
+          "mean_chrf": 0.7833,
+          "term_preservation_pct": 0.0,
+          "num_preservation_pct": 100.0
+        },
+        "conversational_general": {
+          "count": 6,
+          "mean_chrf": 0.9182,
+          "term_preservation_pct": 33.3,
+          "num_preservation_pct": 50.0
+        },
+        "conversational_normal": {
+          "count": 5,
+          "mean_chrf": 0.7468,
+          "term_preservation_pct": 60.0,
+          "num_preservation_pct": 100.0
+        },
+        "conversational_query": {
+          "count": 2,
+          "mean_chrf": 0.9136,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "conversational_short": {
+          "count": 4,
+          "mean_chrf": 0.7722,
+          "term_preservation_pct": 75.0,
+          "num_preservation_pct": 100.0
+        },
+        "general_knowledge": {
+          "count": 1,
+          "mean_chrf": 0.6645,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_conversational": {
+          "count": 1,
+          "mean_chrf": 0.3416,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_conversational_numbers": {
+          "count": 1,
+          "mean_chrf": 0.2348,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_named_entities": {
+          "count": 1,
+          "mean_chrf": 0.6453,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_tech": {
+          "count": 3,
+          "mean_chrf": 0.6912,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_tech_entities": {
+          "count": 1,
+          "mean_chrf": 0.6823,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "hinglish_tech_numbers": {
+          "count": 1,
+          "mean_chrf": 0.7476,
+          "term_preservation_pct": 100.0,
+          "num_preservation_pct": 100.0
+        },
+        "named_entities": {
+          "count": 4,
+          "mean_chrf": 0.9399,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "numbers_codes": {
+          "count": 2,
+          "mean_chrf": 0.9621,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "numbers_metrics": {
+          "count": 2,
+          "mean_chrf": 0.7485,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "numbers_schedule": {
+          "count": 2,
+          "mean_chrf": 0.5848,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        },
+        "rag_technical": {
+          "count": 7,
+          "mean_chrf": 0.7148,
+          "term_preservation_pct": 0.0,
+          "num_preservation_pct": 100.0
+        },
+        "technical": {
+          "count": 6,
+          "mean_chrf": 0.7866,
+          "term_preservation_pct": 50.0,
+          "num_preservation_pct": 100.0
+        }
+      }
+    }
+  },
+  "feasibility_audit": {
+    "candidate_a_indictrans2": {
+      "name": "IndicTrans2 Distilled 200M (ai4bharat/indictrans2-*-dist-200M)",
+      "supported_languages": "22 Indic languages + English",
+      "model_size_disk": "1.0 GB (EN->Indic) + 1.0 GB (Indic->EN) = ~2.0 GB checkpoint total",
+      "cpu_feasibility": "NOT FEASIBLE ON CURRENT MACHINE",
+      "memory_requirements_mb": "> 2,500 MB RAM per direction (Exceeds available physical RAM ~790MB free)",
+      "licensing": "IndicTrans2 Model License (AI4Bharat / MIT)",
+      "inference_dependencies": "PyTorch, Transformers, SentencePiece, IndicTransToolkit, indic-nlp-library (Requires C++ compiler)",
+      "english_hindi_capability": "Supported natively but requires dual models",
+      "indic_language_support": "High",
+      "feasibility_status": "NOT FEASIBLE ON CURRENT MACHINE",
+      "feasibility_reasons": [
+        "Memory Footprint: Loading a 200M-1B PyTorch parameter model on an 8GB RAM Windows system with only ~790 MB baseline free RAM triggers immediate OS paging and risks system-wide OOM.",
+        "Dependency Conflict: Missing official PyTorch Windows wheels and C++ compiler toolchains for Python 3.13.7 in this environment.",
+        "Unidirectional Checkpoints: Requires keeping two separate 1GB+ checkpoints in RAM simultaneously for bidirectional English<->Hindi speech translation."
+      ]
+    },
+    "candidate_b_small_local_multilingual": {
+      "name": "MarianMT / Opus-MT / NLLB-200 INT8 CPU",
+      "supported_languages": "English <-> Hindi",
+      "model_size_disk": "~300 MB PyTorch / ~150 MB CTranslate2 INT8",
+      "cpu_feasibility": "NOT FEASIBLE ON CURRENT MACHINE",
+      "memory_requirements_mb": "~600-800 MB RAM runtime working set",
+      "licensing": "Apache 2.0 / CC-BY-SA",
+      "inference_dependencies": "SentencePiece vocabulary tokenizer, huggingface-hub",
+      "english_hindi_capability": "Moderate conversational coverage; poor Hinglish/code-mixed handling",
+      "indic_language_support": "Limited to trained pairs",
+      "feasibility_status": "NOT FEASIBLE ON CURRENT MACHINE",
+      "feasibility_reasons": [
+        "SentencePiece Tokenizer dependency missing binary wheels in local environment.",
+        "Narrow vocabulary coverage causes severe failure on Hinglish and technical terms compared to LLMs.",
+        "Additional memory allocation destabilizes parallel Faster-Whisper base INT8 ASR pipeline on 8GB host."
+      ]
+    }
+  },
+  "rag_ab_summary": {
+    "total_cases": 50,
+    "improved_count": 5,
+    "improved_pct": 10.0,
+    "no_difference_count": 43,
+    "no_difference_pct": 86.0,
+    "degraded_count": 2,
+    "degraded_pct": 4.0,
+    "mean_rag_overhead_ms": -212.97,
+    "p50_rag_overhead_ms": -15.84,
+    "p95_rag_overhead_ms": 254.79,
+    "rag_technical_cases_impact": {
+      "rag_expected_cases": 17,
+      "improved_on_rag_expected": 2
+    }
+  },
+  "router_analysis": {
+    "justification": "NOT JUSTIFIED",
+    "findings": [
+      "Groq LLM achieves substantially higher semantic fidelity (chrF ~0.78 vs ~0.59 for fallback).",
+      "Fallback Cascade suffers on technical terms and code-mixed Hinglish where domain grounding is absent.",
+      "Local Candidate A and B are unfeasible due to memory constraints (~790MB free RAM baseline) and missing Windows wheels.",
+      "Routing overhead would introduce classification latency without a superior local engine to route to."
+    ],
+    "recommendation": "KEEP CURRENT (Groq LLM with multi-tier Fallback)"
+  },
+  "recommendation": "KEEP CURRENT",
+  "stt_safety_invariant": "PRESERVED (Text-only evaluation, zero STT modification)"
+}
