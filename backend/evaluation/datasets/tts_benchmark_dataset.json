@@ -1,0 +1,290 @@
+[
+  {
+    "id": "tts_en_01",
+    "language": "en",
+    "text": "Hello there! How can I help you today?",
+    "category": "short_conversational",
+    "expected_terms": ["Hello", "help"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_en_02",
+    "language": "en",
+    "text": "Good morning, we are starting the team standup meeting right now.",
+    "category": "normal_sentence",
+    "expected_terms": ["standup", "meeting"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_en_03",
+    "language": "en",
+    "text": "Although the preliminary architectural evaluation indicated satisfactory throughput across distributed clusters, intermittent latency spikes occurred during sustained peak load.",
+    "category": "long_sentence",
+    "expected_terms": ["architectural", "throughput", "clusters", "latency spikes"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_en_04",
+    "language": "en",
+    "text": "The API returned HTTP 404 after 2.5 seconds.",
+    "category": "technical_numbers",
+    "expected_terms": ["API", "HTTP 404"],
+    "expected_numbers": ["404", "2.5"]
+  },
+  {
+    "id": "tts_en_05",
+    "language": "en",
+    "text": "We need to deploy the Docker container to Kubernetes pod replicas.",
+    "category": "technical_sentence",
+    "expected_terms": ["Docker", "Kubernetes", "pod replicas"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_en_06",
+    "language": "en",
+    "text": "The Spring Boot microservice requires Java 17 runtime environment.",
+    "category": "technical_sentence",
+    "expected_terms": ["Spring Boot", "microservice", "Java 17"],
+    "expected_numbers": ["17"]
+  },
+  {
+    "id": "tts_en_07",
+    "language": "en",
+    "text": "System uptime reached 99.9% across all 4 production nodes.",
+    "category": "numbers_percentages",
+    "expected_terms": ["uptime", "nodes"],
+    "expected_numbers": ["99.9%", "4"]
+  },
+  {
+    "id": "tts_en_08",
+    "language": "en",
+    "text": "The project deadline was updated from March 15 to April 30, 2026.",
+    "category": "dates",
+    "expected_terms": ["March 15", "April 30"],
+    "expected_numbers": ["15", "30", "2026"]
+  },
+  {
+    "id": "tts_en_09",
+    "language": "en",
+    "text": "Please inspect the documentation at https://api.internal.dev/v1/health status endpoint.",
+    "category": "urls_domain",
+    "expected_terms": ["documentation", "https://api.internal.dev/v1/health", "endpoint"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_en_09b",
+    "language": "en",
+    "text": "Retrieval Augmented Generation, commonly abbreviated as RAG, enhances LLM accuracy.",
+    "category": "abbreviations",
+    "expected_terms": ["Retrieval Augmented Generation", "RAG", "LLM"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_en_10",
+    "language": "en",
+    "text": "Satya Nadella announced new Microsoft cloud initiatives at Seattle headquarters.",
+    "category": "named_entities",
+    "expected_terms": ["Satya Nadella", "Microsoft", "Seattle"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_en_11",
+    "language": "en",
+    "text": "Wait! Stop right there, is that really true? Let me verify.",
+    "category": "punctuation_prosody",
+    "expected_terms": ["Wait", "verify"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_en_12",
+    "language": "en",
+    "text": "Transaction amount is $1,450.75 and processed in 0.05 seconds.",
+    "category": "currency_decimals",
+    "expected_terms": ["Transaction", "processed"],
+    "expected_numbers": ["1450.75", "0.05"]
+  },
+  {
+    "id": "tts_en_13",
+    "language": "en",
+    "text": "The memory consumption settled at approximately 750 MB out of 8 GB.",
+    "category": "units_quantities",
+    "expected_terms": ["memory", "consumption"],
+    "expected_numbers": ["750", "8"]
+  },
+  {
+    "id": "tts_hi_01",
+    "language": "hi",
+    "text": "नमस्ते! आप आज कैसे हैं?",
+    "category": "short_conversational",
+    "expected_terms": ["नमस्ते", "कैसे"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hi_02",
+    "language": "hi",
+    "text": "शुभ प्रभात, आज की बैठक समय पर शुरू होगी।",
+    "category": "normal_sentence",
+    "expected_terms": ["शुभ प्रभात", "बैठक"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hi_03",
+    "language": "hi",
+    "text": "यद्यपि हमारे अनुवाद मॉडल ने उच्च सटीकता प्रदर्शित की, फिर भी कुछ जटिल तकनीकी शब्दों में सुधार की आवश्यकता है।",
+    "category": "long_sentence",
+    "expected_terms": ["अनुवाद मॉडल", "उच्च सटीकता", "तकनीकी शब्दों"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hi_04",
+    "language": "hi",
+    "text": "सर्वर ने 2.5 सेकंड के बाद HTTP 404 त्रुटि वापस की।",
+    "category": "technical_numbers",
+    "expected_terms": ["सर्वर", "HTTP 404", "त्रुटि"],
+    "expected_numbers": ["2.5", "404"]
+  },
+  {
+    "id": "tts_hi_05",
+    "language": "hi",
+    "text": "माइक्रोसर्विस को डॉकर कंटेनर और कुबेरनेट्स क्लस्टर में तैनात करें।",
+    "category": "technical_sentence",
+    "expected_terms": ["माइक्रोसर्विस", "डॉकर कंटेनर", "कुबेरनेट्स"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hi_06",
+    "language": "hi",
+    "text": "यह बैकएंड सेवा स्प्रिंग बूट और जावा 17 पर चलती है।",
+    "category": "technical_sentence",
+    "expected_terms": ["बैकएंड", "स्प्रिंग बूट", "जावा 17"],
+    "expected_numbers": ["17"]
+  },
+  {
+    "id": "tts_hi_07",
+    "language": "hi",
+    "text": "सभी 4 उत्पादन सर्वरों पर 99.9% अपटाइम दर्ज किया गया।",
+    "category": "numbers_percentages",
+    "expected_terms": ["उत्पादन सर्वरों", "अपटाइम"],
+    "expected_numbers": ["4", "99.9%"]
+  },
+  {
+    "id": "tts_hi_08",
+    "language": "hi",
+    "text": "परियोजना की समय सीमा 15 मार्च से 30 अप्रैल 2026 तक बढ़ा दी गई है।",
+    "category": "dates",
+    "expected_terms": ["परियोजना", "15 मार्च", "30 अप्रैल"],
+    "expected_numbers": ["15", "30", "2026"]
+  },
+  {
+    "id": "tts_hi_09",
+    "language": "hi",
+    "text": "कृपया दस्तावेज़ीकरण api.company.internal पोर्टल पर देखें।",
+    "category": "urls_domain",
+    "expected_terms": ["दस्तावेज़ीकरण", "api.company.internal"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hi_10",
+    "language": "hi",
+    "text": "आरएजी और एलएलएम तकनीक वास्तविक समय अनुवाद को सशक्त बनाती हैं।",
+    "category": "abbreviations",
+    "expected_terms": ["आरएजी", "एलएलएम", "वास्तविक समय अनुवाद"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hi_11",
+    "language": "hi",
+    "text": "सुंदर पिचाई और सत्या नडेला ने नई दिल्ली सम्मेलन में भाग लिया।",
+    "category": "named_entities",
+    "expected_terms": ["सुंदर पिचाई", "सत्या नडेला", "नई दिल्ली"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hi_12",
+    "language": "hi",
+    "text": "रुको! क्या यह सही है? हमें तुरंत दोबारा जांच करनी होगी।",
+    "category": "punctuation_prosody",
+    "expected_terms": ["रुको", "जांच"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hi_13",
+    "language": "hi",
+    "text": "कुल राशि ₹1,450.75 है और भुगतान 0.05 सेकंड में पूरा हुआ।",
+    "category": "currency_decimals",
+    "expected_terms": ["कुल राशि", "भुगतान"],
+    "expected_numbers": ["1450.75", "0.05"]
+  },
+  {
+    "id": "tts_hi_14",
+    "language": "hi",
+    "text": "सिस्टम में 8 जीबी में से लगभग 750 एमबी रैम का उपयोग हो रहा है।",
+    "category": "units_quantities",
+    "expected_terms": ["सिस्टम", "रैम"],
+    "expected_numbers": ["8", "750"]
+  },
+  {
+    "id": "tts_hinglish_01",
+    "language": "hinglish",
+    "text": "Aapka audio pipeline bahut smoothly chal raha hai.",
+    "category": "roman_hindi",
+    "expected_terms": ["audio pipeline", "smoothly"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hinglish_02",
+    "language": "hinglish",
+    "text": "Kya aapne latest code commit pull kar liya hai?",
+    "category": "roman_hindi",
+    "expected_terms": ["code commit", "pull"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hinglish_03",
+    "language": "hinglish",
+    "text": "API request fail ho gayi kyunki HTTP 500 internal server error aaya.",
+    "category": "code_mixed_technical",
+    "expected_terms": ["API request", "HTTP 500", "internal server error"],
+    "expected_numbers": ["500"]
+  },
+  {
+    "id": "tts_hinglish_04",
+    "language": "hinglish",
+    "text": "Hamara Docker container 8080 port par listen kar raha hai.",
+    "category": "code_mixed_technical",
+    "expected_terms": ["Docker container", "8080 port"],
+    "expected_numbers": ["8080"]
+  },
+  {
+    "id": "tts_hinglish_05",
+    "language": "hinglish",
+    "text": "Kubernetes cluster mein CPU usage 85% tak pahunch gaya hai.",
+    "category": "code_mixed_numbers",
+    "expected_terms": ["Kubernetes cluster", "CPU usage"],
+    "expected_numbers": ["85%"]
+  },
+  {
+    "id": "tts_hinglish_06",
+    "language": "hinglish",
+    "text": "Main kal subah 9:30 AM par client demo conduct karunga.",
+    "category": "code_mixed_time",
+    "expected_terms": ["client demo", "conduct"],
+    "expected_numbers": ["9:30"]
+  },
+  {
+    "id": "tts_hinglish_07",
+    "language": "hinglish",
+    "text": "RAG architecture use karke translation accuracy improve hoti hai.",
+    "category": "code_mixed_technical",
+    "expected_terms": ["RAG architecture", "translation accuracy"],
+    "expected_numbers": []
+  },
+  {
+    "id": "tts_hinglish_08",
+    "language": "hinglish",
+    "text": "Database query latency 12 milliseconds se kam honi chahiye.",
+    "category": "code_mixed_numbers",
+    "expected_terms": ["Database query latency", "milliseconds"],
+    "expected_numbers": ["12"]
+  }
+]
