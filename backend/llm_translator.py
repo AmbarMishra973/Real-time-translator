@@ -163,42 +163,53 @@ RECENT CONVERSATION (for pronoun/context resolution):
         if not self._groq_client:
             raise RuntimeError("Groq client not initialized or missing API key.")
 
-        try:
-            response = self._groq_client.chat.completions.create(
-                model=self.groq_model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Text to translate:\n{user_text}"}
-                ],
-                temperature=0.1,
-                max_tokens=256
-            )
-        except Exception as e:
-            if "model_not_found" in str(e) or "does not exist" in str(e):
-                candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-                response = None
-                for m in candidate_models:
-                    if m == self.groq_model:
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = self._groq_client.chat.completions.create(
+                    model=self.groq_model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Text to translate:\n{user_text}"}
+                    ],
+                    temperature=0.1,
+                    max_tokens=256
+                )
+                break
+            except Exception as e:
+                err_str = str(e).lower()
+                if "rate_limit" in err_str or "429" in err_str:
+                    if attempt < max_retries - 1:
+                        wait_sec = 2.0 * (attempt + 1)
+                        print(f"[!] Groq rate limit hit (429), backing off for {wait_sec}s...")
+                        time.sleep(wait_sec)
                         continue
-                    try:
-                        print(f"[!] Model {self.groq_model} unavailable, retrying with {m}...")
-                        response = self._groq_client.chat.completions.create(
-                            model=m,
-                            messages=[
-                                {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": f"Text to translate:\n{user_text}"}
-                            ],
-                            temperature=0.1,
-                            max_tokens=256
-                        )
-                        self.groq_model = m
+                if "model_not_found" in err_str or "does not exist" in err_str:
+                    candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+                    response = None
+                    for m in candidate_models:
+                        if m == self.groq_model:
+                            continue
+                        try:
+                            print(f"[!] Model {self.groq_model} unavailable, retrying with {m}...")
+                            response = self._groq_client.chat.completions.create(
+                                model=m,
+                                messages=[
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": f"Text to translate:\n{user_text}"}
+                                ],
+                                temperature=0.1,
+                                max_tokens=256
+                            )
+                            self.groq_model = m
+                            break
+                        except Exception:
+                            continue
+                    if response is not None:
                         break
-                    except Exception:
-                        continue
-                if response is None:
                     raise e
-            else:
-                raise e
+                if attempt == max_retries - 1:
+                    raise e
 
         translated = response.choices[0].message.content.strip()
         # Clean any surrounding quotes or prefix labels if LLM leaked them
@@ -427,12 +438,13 @@ RECENT CONVERSATION (for pronoun/context resolution):
         domain: Optional[str] = "all",
         top_k: int = 3,
         engine: Optional[str] = None,
-        rag_enabled: bool = True
+        rag_enabled: bool = True,
+        rag_mode: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Executes the full RAG + Context + LLM translation workflow.
         Supports TRANSLATION_ENGINE feature flag ('groq', 'fallback', 'indictrans2', 'candidate_local').
-        Supports rag_enabled flag for RAG A/B evaluation.
+        Supports rag_enabled flag and rag_mode ('universal', 'selective', 'none').
         """
         import time
         t0 = time.perf_counter()
@@ -447,6 +459,8 @@ RECENT CONVERSATION (for pronoun/context resolution):
                 "fallback_used": False,
                 "fallback_reason": None,
                 "context_used": False,
+                "rag_mode": "none",
+                "gate_decision": None,
                 "latency_s": 0.0,
                 "total_latency_s": 0.0,
                 "history": self.conversation_manager.get_history(session_id)
@@ -455,15 +469,53 @@ RECENT CONVERSATION (for pronoun/context resolution):
         # Resolve active translation engine
         active_engine = (engine or os.getenv("TRANSLATION_ENGINE", "groq")).lower().strip()
 
-        # 1. RAG Retrieval (bypassed if rag_enabled is False)
+        # Resolve active RAG mode (universal, selective, none)
+        if not rag_enabled:
+            active_rag_mode = "none"
+        elif rag_mode is not None:
+            active_rag_mode = rag_mode.lower().strip()
+        else:
+            env_rag_mode = os.getenv("RAG_MODE", "").lower().strip()
+            if env_rag_mode in ("universal", "selective", "none"):
+                active_rag_mode = env_rag_mode
+            elif os.getenv("SELECTIVE_RAG_ENABLED", "true").lower() in ("false", "0"):
+                active_rag_mode = "universal"
+            else:
+                active_rag_mode = "selective"
+
+        # 1. RAG Retrieval / Selective Context Evaluation
         retrieved_items = []
         sources_used = []
         rag_context_str = "No domain terminology available."
-        if rag_enabled:
+        gate_decision = None
+
+        if active_rag_mode == "selective":
+            from backend.services.translation_context_gate import translation_context_gate
+            decision = translation_context_gate.evaluate(text=text, domain=domain or "all", top_k=top_k)
+            gate_decision = decision.to_dict()
+            if decision.use_rag:
+                retrieved_items = decision.chunks
+                sources_used = decision.sources_used
+                rag_context_str = rag_engine.format_context_for_prompt(retrieved_items)
+            else:
+                sources_used = decision.sources_used
+        elif active_rag_mode == "universal":
             rag_res = rag_engine.retrieve(query=text, domain=domain, top_k=top_k)
             retrieved_items = rag_res["chunks"]
             sources_used = rag_res["sources_used"]
             rag_context_str = rag_engine.format_context_for_prompt(retrieved_items)
+            gate_decision = {
+                "decision": "USE_RAG",
+                "use_rag": True,
+                "reason": "universal_rag_mode",
+                "total_chunks": len(retrieved_items)
+            }
+        else:  # none
+            gate_decision = {
+                "decision": "NO_RAG",
+                "use_rag": False,
+                "reason": "rag_disabled"
+            }
 
         # 2. Conversation History
         history_str = self.conversation_manager.format_history_for_prompt(session_id)
@@ -540,6 +592,8 @@ RECENT CONVERSATION (for pronoun/context resolution):
             "fallback_used": fallback_used,
             "fallback_reason": fallback_reason,
             "context_used": len(retrieved_items) > 0,
+            "rag_mode": active_rag_mode,
+            "gate_decision": gate_decision,
             "latency_s": trans_latency_s,
             "total_latency_s": round(time.perf_counter() - t0, 2),
             "history": self.conversation_manager.get_history(session_id)

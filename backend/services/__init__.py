@@ -13,6 +13,11 @@ from backend.services.hypothesis_service import (
     HypothesisSessionState,
     HypothesisResult
 )
+from backend.services.translation_context_gate import (
+    translation_context_gate,
+    TranslationContextGate,
+    GateDecision
+)
 
 __all__ = [
     "stt_service", "STTService", "parse_capture_metadata", "convert_to_clean_wav",
@@ -21,5 +26,7 @@ __all__ = [
     "tts_service", "TTSService", "VOICE_MAP",
     "session_manager", "SessionManager",
     "vad_service", "VADService", "VADConfig", "VADSessionState",
-    "hypothesis_service", "HypothesisService", "HypothesisConfig", "HypothesisSessionState", "HypothesisResult"
+    "hypothesis_service", "HypothesisService", "HypothesisConfig", "HypothesisSessionState", "HypothesisResult",
+    "translation_context_gate", "TranslationContextGate", "GateDecision"
 ]
+
