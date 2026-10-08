@@ -21,6 +21,7 @@ from faster_whisper import WhisperModel
 
 from backend.core.logger import stt_log
 from backend.services.llm_service import llm_service
+from backend.services.whisper_profiler import whisper_profiler
 from backend.audio_diagnostics import (
     boost_quiet_pcm16_wav,
     inspect_pcm16_wav,
@@ -247,7 +248,10 @@ class STTService:
         lang: Optional[str] = None,
         filename: Optional[str] = None,
         content_type: Optional[str] = None,
-        capture_metadata: Optional[dict] = None
+        capture_metadata: Optional[dict] = None,
+        session_id: Optional[str] = None,
+        request_id: Optional[str] = None,
+        reason: str = "transcribe"
     ) -> Tuple[str, Any, Dict[str, Any], str, str]:
         """
         Processes and transcribes audio with signal diagnostics, gain boost, silence gate,
@@ -256,7 +260,7 @@ class STTService:
         Returns:
             (clean_text, info, post_diag, engine_used, model_used)
         """
-        utterance_id = uuid.uuid4().hex[:12]
+        utterance_id = request_id or uuid.uuid4().hex[:12]
         stt_started_at = time.perf_counter()
 
         # 1. Convert and validate incoming audio into 16kHz mono WAV
@@ -372,6 +376,7 @@ class STTService:
             # Guide Devanagari script tokenization for Hindi to prevent Urdu Perso-Arabic transcription
             initial_prompt = "यह हिंदी में बातचीत है।" if whisper_lang == "hi" else None
 
+            t_inf_start = time.perf_counter()
             segments, info = self.model.transcribe(
                 io.BytesIO(wav_bytes),
                 language=whisper_lang,
@@ -382,6 +387,21 @@ class STTService:
                 initial_prompt=initial_prompt,
             )
             clean_text = ' '.join(seg.text for seg in segments).strip()
+            inference_dur_s = time.perf_counter() - t_inf_start
+
+            whisper_profiler.record_call(
+                session_id=session_id or "default",
+                request_id=utterance_id,
+                reason=reason,
+                call_type="final" if reason in ("final_stream", "rest_pipeline", "transcribe") else "partial",
+                audio_duration_s=post_diag["padded_duration_s"],
+                sample_count=int(post_diag["padded_duration_s"] * 16000),
+                inference_duration_s=inference_dur_s,
+                text=clean_text,
+                accepted=True,
+                hypothesis_applied=False,
+                extra={"engine": engine_used, "model": model_used, "rms_dbfs": post_diag.get("rms_dbfs")}
+            )
             if info is None:
                 info = SimpleNamespace(
                     language=whisper_lang,
@@ -423,7 +443,14 @@ class STTService:
         )
         return clean_text, info, post_diag, engine_used, model_used
 
-    def transcribe_partial(self, audio_bytes: bytes, lang: Optional[str] = None) -> str:
+    def transcribe_partial(
+        self,
+        audio_bytes: bytes,
+        lang: Optional[str] = None,
+        session_id: Optional[str] = None,
+        request_id: Optional[str] = None,
+        reason: str = "partial_stream"
+    ) -> str:
         """
         Lightweight incremental transcription for intermediate streaming partials.
         Converts available buffer window to WAV and performs fast single-beam decoding.
@@ -443,7 +470,12 @@ class STTService:
         whisper_lang = None if (not lang or lang.lower() == 'auto') else lang.split('-')[0].lower()
         initial_prompt = "यह हिंदी में बातचीत है।" if whisper_lang == "hi" else None
 
+        # Measure audio duration from WAV (16kHz 16-bit mono = 32000 bytes/sec)
+        pcm_len = max(0, len(wav_bytes) - 44)
+        audio_dur_s = round(pcm_len / 32000.0, 3)
+
         try:
+            t_inf_start = time.perf_counter()
             segments, _ = self.model.transcribe(
                 io.BytesIO(wav_bytes),
                 language=whisper_lang,
@@ -454,6 +486,21 @@ class STTService:
                 initial_prompt=initial_prompt,
             )
             text = ' '.join(seg.text for seg in segments).strip()
+            inference_dur_s = time.perf_counter() - t_inf_start
+
+            whisper_profiler.record_call(
+                session_id=session_id or "default",
+                request_id=request_id or "default",
+                reason=reason,
+                call_type="partial",
+                audio_duration_s=audio_dur_s,
+                sample_count=int(audio_dur_s * 16000),
+                inference_duration_s=inference_dur_s,
+                text=text,
+                accepted=bool(text),
+                hypothesis_applied=False,
+                extra={"engine": "local", "model": self.model_size}
+            )
             return text
         except Exception:
             return ""

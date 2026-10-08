@@ -1,0 +1,943 @@
+{
+  "arms": [
+    {
+      "arm": "Arm_A_P7_Baseline",
+      "total_calls": 205,
+      "mean_calls": 6.83,
+      "mean_amp": 4.17,
+      "mean_first_useful_s": 2.044,
+      "mean_final_stt_s": 2.29,
+      "average_wer": 0.5032,
+      "exact_matches": 13,
+      "exact_pct": 43.3,
+      "results": [
+        {
+          "id": "EN-S1",
+          "calls": 4,
+          "amplification": 2.97,
+          "first_useful_s": 1.602,
+          "final_stt_s": 2.593,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Hello, how are you?"
+        },
+        {
+          "id": "EN-S2",
+          "calls": 3,
+          "amplification": 2.07,
+          "first_useful_s": 1.556,
+          "final_stt_s": 1.584,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "What time is the meeting?"
+        },
+        {
+          "id": "EN-S3",
+          "calls": 3,
+          "amplification": 2.08,
+          "first_useful_s": 1.466,
+          "final_stt_s": 1.425,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Can you hear me clearly?"
+        },
+        {
+          "id": "EN-S4",
+          "calls": 3,
+          "amplification": 2.1,
+          "first_useful_s": 1.542,
+          "final_stt_s": 1.518,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Thank you for your help."
+        },
+        {
+          "id": "EN-S5",
+          "calls": 4,
+          "amplification": 2.99,
+          "first_useful_s": 1.497,
+          "final_stt_s": 1.587,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Please send me the report."
+        },
+        {
+          "id": "EN-L1",
+          "calls": 8,
+          "amplification": 4.57,
+          "first_useful_s": 1.806,
+          "final_stt_s": 2.219,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Hello, what is your name?  What are you doing?  What is your job?"
+        },
+        {
+          "id": "EN-L2",
+          "calls": 11,
+          "amplification": 6.01,
+          "first_useful_s": 1.531,
+          "final_stt_s": 2.249,
+          "wer": 0.087,
+          "exact": false,
+          "transcript": "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency."
+        },
+        {
+          "id": "EN-L3",
+          "calls": 13,
+          "amplification": 7.48,
+          "first_useful_s": 1.501,
+          "final_stt_s": 1.972,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+        },
+        {
+          "id": "EN-L4",
+          "calls": 10,
+          "amplification": 5.9,
+          "first_useful_s": 1.505,
+          "final_stt_s": 2.179,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window."
+        },
+        {
+          "id": "EN-L5",
+          "calls": 12,
+          "amplification": 6.67,
+          "first_useful_s": 1.769,
+          "final_stt_s": 2.02,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks."
+        },
+        {
+          "id": "HI-1",
+          "calls": 5,
+          "amplification": 3.5,
+          "first_useful_s": 1.76,
+          "final_stt_s": 2.75,
+          "wer": 0.5,
+          "exact": false,
+          "transcript": "नमस्ती आप के से है?"
+        },
+        {
+          "id": "HI-2",
+          "calls": 6,
+          "amplification": 3.99,
+          "first_useful_s": 4.219,
+          "final_stt_s": 1.879,
+          "wer": 0.5556,
+          "exact": false,
+          "transcript": "आपका नाम क्या है।"
+        },
+        {
+          "id": "HI-3",
+          "calls": 6,
+          "amplification": 3.84,
+          "first_useful_s": 3.822,
+          "final_stt_s": 2.151,
+          "wer": 0.6667,
+          "exact": false,
+          "transcript": "मूजी वाच का मोसम बहुजा ज़ागा नए है।"
+        },
+        {
+          "id": "HI-4",
+          "calls": 6,
+          "amplification": 3.88,
+          "first_useful_s": 4.043,
+          "final_stt_s": 3.928,
+          "wer": 3.7143,
+          "exact": false,
+          "transcript": "खिप्या मूज हे नेजेगा नाजीजे नाजीजे नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा �"
+        },
+        {
+          "id": "HI-5",
+          "calls": 5,
+          "amplification": 3.1,
+          "first_useful_s": 1.54,
+          "final_stt_s": 2.083,
+          "wer": 0.3333,
+          "exact": false,
+          "transcript": "यह हम कल सुभा दस बचे मिल सकते है?"
+        },
+        {
+          "id": "HG-1",
+          "calls": 4,
+          "amplification": 2.64,
+          "first_useful_s": 1.548,
+          "final_stt_s": 1.957,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "अज मीतिन का ताम क्या है?"
+        },
+        {
+          "id": "HG-2",
+          "calls": 7,
+          "amplification": 4.16,
+          "first_useful_s": 3.82,
+          "final_stt_s": 2.055,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "मेर बाँ भाँ परी स्भाद हो एक है।"
+        },
+        {
+          "id": "HG-3",
+          "calls": 6,
+          "amplification": 3.58,
+          "first_useful_s": 1.58,
+          "final_stt_s": 4.546,
+          "wer": 0.8889,
+          "exact": false,
+          "transcript": "सर்வால் தான் ہو گیا ہے,please deployment check-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-ch"
+        },
+        {
+          "id": "HG-4",
+          "calls": 6,
+          "amplification": 3.95,
+          "first_useful_s": 3.931,
+          "final_stt_s": 4.286,
+          "wer": 4.0,
+          "exact": false,
+          "transcript": "मूज ही प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रो�"
+        },
+        {
+          "id": "HG-5",
+          "calls": 7,
+          "amplification": 4.1,
+          "first_useful_s": 4.03,
+          "final_stt_s": 4.101,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "वेशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशा�"
+        },
+        {
+          "id": "TECH-1",
+          "calls": 7,
+          "amplification": 4.4,
+          "first_useful_s": 1.459,
+          "final_stt_s": 1.857,
+          "wer": 0.1111,
+          "exact": false,
+          "transcript": "We need to deploy our containerized microservices to Kubanades."
+        },
+        {
+          "id": "TECH-2",
+          "calls": 7,
+          "amplification": 4.14,
+          "first_useful_s": 1.515,
+          "final_stt_s": 2.11,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "The vector database stores dense embeddings for retrieval augmented generation."
+        },
+        {
+          "id": "TECH-3",
+          "calls": 7,
+          "amplification": 4.33,
+          "first_useful_s": 1.528,
+          "final_stt_s": 1.958,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Check the API gateway logs for rate limit errors and high response times."
+        },
+        {
+          "id": "TECH-4",
+          "calls": 7,
+          "amplification": 4.25,
+          "first_useful_s": 1.54,
+          "final_stt_s": 1.845,
+          "wer": 0.25,
+          "exact": false,
+          "transcript": "We configure faster whisper with INT8 quantization on CPU."
+        },
+        {
+          "id": "TECH-5",
+          "calls": 7,
+          "amplification": 4.11,
+          "first_useful_s": 1.457,
+          "final_stt_s": 1.796,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Continuous integration pipeline runs unit tests before pushing to production."
+        },
+        {
+          "id": "NUM-1",
+          "calls": 10,
+          "amplification": 5.61,
+          "first_useful_s": 1.556,
+          "final_stt_s": 1.99,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "The server IP address is 192.168.1.105 on port 8000."
+        },
+        {
+          "id": "NUM-2",
+          "calls": 8,
+          "amplification": 4.94,
+          "first_useful_s": 1.467,
+          "final_stt_s": 1.835,
+          "wer": 0.2,
+          "exact": false,
+          "transcript": "Flight AI302 departs at 5.45 pm from terminal 3."
+        },
+        {
+          "id": "NUM-3",
+          "calls": 6,
+          "amplification": 3.76,
+          "first_useful_s": 1.749,
+          "final_stt_s": 1.892,
+          "wer": 0.6,
+          "exact": false,
+          "transcript": "Your verification code is 849201."
+        },
+        {
+          "id": "NUM-4",
+          "calls": 9,
+          "amplification": 5.03,
+          "first_useful_s": 1.468,
+          "final_stt_s": 1.892,
+          "wer": 0.1111,
+          "exact": false,
+          "transcript": "The invoice total is $1,250.75 due on November 15."
+        },
+        {
+          "id": "NUM-5",
+          "calls": 8,
+          "amplification": 4.85,
+          "first_useful_s": 1.514,
+          "final_stt_s": 2.429,
+          "wer": 0.0769,
+          "exact": false,
+          "transcript": "Dr Sharma will be available on room 402 between 2 and 4 pm."
+        }
+      ]
+    },
+    {
+      "arm": "Arm_B_Opt_Cadence",
+      "total_calls": 129,
+      "mean_calls": 4.3,
+      "mean_amp": 2.88,
+      "mean_first_useful_s": 2.137,
+      "mean_final_stt_s": 2.189,
+      "average_wer": 0.5032,
+      "exact_matches": 13,
+      "exact_pct": 43.3,
+      "results": [
+        {
+          "id": "EN-S1",
+          "calls": 2,
+          "amplification": 1.55,
+          "first_useful_s": 1.952,
+          "final_stt_s": 1.59,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Hello, how are you?"
+        },
+        {
+          "id": "EN-S2",
+          "calls": 2,
+          "amplification": 1.59,
+          "first_useful_s": 1.703,
+          "final_stt_s": 1.546,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "What time is the meeting?"
+        },
+        {
+          "id": "EN-S3",
+          "calls": 2,
+          "amplification": 1.6,
+          "first_useful_s": 1.534,
+          "final_stt_s": 1.706,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Can you hear me clearly?"
+        },
+        {
+          "id": "EN-S4",
+          "calls": 2,
+          "amplification": 1.61,
+          "first_useful_s": 1.847,
+          "final_stt_s": 1.547,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Thank you for your help."
+        },
+        {
+          "id": "EN-S5",
+          "calls": 2,
+          "amplification": 1.55,
+          "first_useful_s": 1.711,
+          "final_stt_s": 1.577,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Please send me the report."
+        },
+        {
+          "id": "EN-L1",
+          "calls": 5,
+          "amplification": 3.13,
+          "first_useful_s": 1.569,
+          "final_stt_s": 1.748,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Hello, what is your name?  What are you doing?  What is your job?"
+        },
+        {
+          "id": "EN-L2",
+          "calls": 7,
+          "amplification": 4.19,
+          "first_useful_s": 1.688,
+          "final_stt_s": 2.09,
+          "wer": 0.087,
+          "exact": false,
+          "transcript": "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency."
+        },
+        {
+          "id": "EN-L3",
+          "calls": 8,
+          "amplification": 4.88,
+          "first_useful_s": 1.705,
+          "final_stt_s": 1.937,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+        },
+        {
+          "id": "EN-L4",
+          "calls": 6,
+          "amplification": 3.72,
+          "first_useful_s": 1.537,
+          "final_stt_s": 1.922,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window."
+        },
+        {
+          "id": "EN-L5",
+          "calls": 7,
+          "amplification": 4.0,
+          "first_useful_s": 1.522,
+          "final_stt_s": 2.122,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks."
+        },
+        {
+          "id": "HI-1",
+          "calls": 3,
+          "amplification": 2.25,
+          "first_useful_s": 1.691,
+          "final_stt_s": 1.911,
+          "wer": 0.5,
+          "exact": false,
+          "transcript": "नमस्ती आप के से है?"
+        },
+        {
+          "id": "HI-2",
+          "calls": 4,
+          "amplification": 2.99,
+          "first_useful_s": 1.695,
+          "final_stt_s": 1.845,
+          "wer": 0.5556,
+          "exact": false,
+          "transcript": "आपका नाम क्या है।"
+        },
+        {
+          "id": "HI-3",
+          "calls": 4,
+          "amplification": 2.89,
+          "first_useful_s": 3.974,
+          "final_stt_s": 2.112,
+          "wer": 0.6667,
+          "exact": false,
+          "transcript": "मूजी वाच का मोसम बहुजा ज़ागा नए है।"
+        },
+        {
+          "id": "HI-4",
+          "calls": 4,
+          "amplification": 2.92,
+          "first_useful_s": 4.165,
+          "final_stt_s": 4.039,
+          "wer": 3.7143,
+          "exact": false,
+          "transcript": "खिप्या मूज हे नेजेगा नाजीजे नाजीजे नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा �"
+        },
+        {
+          "id": "HI-5",
+          "calls": 3,
+          "amplification": 2.05,
+          "first_useful_s": 1.59,
+          "final_stt_s": 2.029,
+          "wer": 0.3333,
+          "exact": false,
+          "transcript": "यह हम कल सुभा दस बचे मिल सकते है?"
+        },
+        {
+          "id": "HG-1",
+          "calls": 3,
+          "amplification": 2.37,
+          "first_useful_s": 3.901,
+          "final_stt_s": 1.966,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "अज मीतिन का ताम क्या है?"
+        },
+        {
+          "id": "HG-2",
+          "calls": 4,
+          "amplification": 2.5,
+          "first_useful_s": 3.729,
+          "final_stt_s": 2.037,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "मेर बाँ भाँ परी स्भाद हो एक है।"
+        },
+        {
+          "id": "HG-3",
+          "calls": 4,
+          "amplification": 2.72,
+          "first_useful_s": 3.728,
+          "final_stt_s": 3.914,
+          "wer": 0.8889,
+          "exact": false,
+          "transcript": "सर்வால் தான் ہو گیا ہے,please deployment check-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-ch"
+        },
+        {
+          "id": "HG-4",
+          "calls": 4,
+          "amplification": 2.97,
+          "first_useful_s": 3.649,
+          "final_stt_s": 4.647,
+          "wer": 4.0,
+          "exact": false,
+          "transcript": "मूज ही प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रो�"
+        },
+        {
+          "id": "HG-5",
+          "calls": 5,
+          "amplification": 3.46,
+          "first_useful_s": 3.843,
+          "final_stt_s": 4.065,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "वेशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशा�"
+        },
+        {
+          "id": "TECH-1",
+          "calls": 4,
+          "amplification": 2.62,
+          "first_useful_s": 1.497,
+          "final_stt_s": 1.994,
+          "wer": 0.1111,
+          "exact": false,
+          "transcript": "We need to deploy our containerized microservices to Kubanades."
+        },
+        {
+          "id": "TECH-2",
+          "calls": 5,
+          "amplification": 3.49,
+          "first_useful_s": 1.529,
+          "final_stt_s": 2.057,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "The vector database stores dense embeddings for retrieval augmented generation."
+        },
+        {
+          "id": "TECH-3",
+          "calls": 4,
+          "amplification": 2.59,
+          "first_useful_s": 1.52,
+          "final_stt_s": 1.814,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Check the API gateway logs for rate limit errors and high response times."
+        },
+        {
+          "id": "TECH-4",
+          "calls": 4,
+          "amplification": 2.55,
+          "first_useful_s": 1.512,
+          "final_stt_s": 1.939,
+          "wer": 0.25,
+          "exact": false,
+          "transcript": "We configure faster whisper with INT8 quantization on CPU."
+        },
+        {
+          "id": "TECH-5",
+          "calls": 5,
+          "amplification": 3.47,
+          "first_useful_s": 1.582,
+          "final_stt_s": 1.846,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Continuous integration pipeline runs unit tests before pushing to production."
+        },
+        {
+          "id": "NUM-1",
+          "calls": 6,
+          "amplification": 3.56,
+          "first_useful_s": 1.552,
+          "final_stt_s": 2.111,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "The server IP address is 192.168.1.105 on port 8000."
+        },
+        {
+          "id": "NUM-2",
+          "calls": 5,
+          "amplification": 3.35,
+          "first_useful_s": 1.515,
+          "final_stt_s": 1.869,
+          "wer": 0.2,
+          "exact": false,
+          "transcript": "Flight AI302 departs at 5.45 pm from terminal 3."
+        },
+        {
+          "id": "NUM-3",
+          "calls": 4,
+          "amplification": 2.84,
+          "first_useful_s": 1.506,
+          "final_stt_s": 1.927,
+          "wer": 0.6,
+          "exact": false,
+          "transcript": "Your verification code is 849201."
+        },
+        {
+          "id": "NUM-4",
+          "calls": 6,
+          "amplification": 3.8,
+          "first_useful_s": 1.513,
+          "final_stt_s": 1.858,
+          "wer": 0.1111,
+          "exact": false,
+          "transcript": "The invoice total is $1,250.75 due on November 15."
+        },
+        {
+          "id": "NUM-5",
+          "calls": 5,
+          "amplification": 3.29,
+          "first_useful_s": 1.664,
+          "final_stt_s": 1.902,
+          "wer": 0.0769,
+          "exact": false,
+          "transcript": "Dr Sharma will be available on room 402 between 2 and 4 pm."
+        }
+      ]
+    },
+    {
+      "arm": "Arm_C_Opt_Smart_Finalize",
+      "total_calls": 129,
+      "mean_calls": 4.3,
+      "mean_amp": 2.38,
+      "mean_first_useful_s": 2.133,
+      "mean_final_stt_s": 1.009,
+      "average_wer": 0.4016,
+      "exact_matches": 13,
+      "exact_pct": 43.3,
+      "results": [
+        {
+          "id": "EN-S1",
+          "calls": 2,
+          "amplification": 1.55,
+          "first_useful_s": 1.512,
+          "final_stt_s": 1.72,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Hello, how are you?"
+        },
+        {
+          "id": "EN-S2",
+          "calls": 2,
+          "amplification": 1.59,
+          "first_useful_s": 1.697,
+          "final_stt_s": 1.57,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "What time is the meeting?"
+        },
+        {
+          "id": "EN-S3",
+          "calls": 2,
+          "amplification": 1.6,
+          "first_useful_s": 1.504,
+          "final_stt_s": 1.577,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Can you hear me clearly?"
+        },
+        {
+          "id": "EN-S4",
+          "calls": 2,
+          "amplification": 1.61,
+          "first_useful_s": 1.812,
+          "final_stt_s": 1.558,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Thank you for your help."
+        },
+        {
+          "id": "EN-S5",
+          "calls": 2,
+          "amplification": 1.55,
+          "first_useful_s": 1.85,
+          "final_stt_s": 1.864,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Please send me the report."
+        },
+        {
+          "id": "EN-L1",
+          "calls": 5,
+          "amplification": 3.13,
+          "first_useful_s": 1.546,
+          "final_stt_s": 1.88,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Hello, what is your name?  What are you doing?  What is your job?"
+        },
+        {
+          "id": "EN-L2",
+          "calls": 7,
+          "amplification": 3.19,
+          "first_useful_s": 1.673,
+          "final_stt_s": 0.0,
+          "wer": 0.087,
+          "exact": false,
+          "transcript": "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency."
+        },
+        {
+          "id": "EN-L3",
+          "calls": 8,
+          "amplification": 3.88,
+          "first_useful_s": 1.662,
+          "final_stt_s": 0.0,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+        },
+        {
+          "id": "EN-L4",
+          "calls": 6,
+          "amplification": 2.72,
+          "first_useful_s": 1.687,
+          "final_stt_s": 0.0,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window."
+        },
+        {
+          "id": "EN-L5",
+          "calls": 7,
+          "amplification": 4.0,
+          "first_useful_s": 1.528,
+          "final_stt_s": 2.431,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks."
+        },
+        {
+          "id": "HI-1",
+          "calls": 3,
+          "amplification": 2.25,
+          "first_useful_s": 1.581,
+          "final_stt_s": 1.872,
+          "wer": 0.5,
+          "exact": false,
+          "transcript": "नमस्ती आप के से है?"
+        },
+        {
+          "id": "HI-2",
+          "calls": 4,
+          "amplification": 1.99,
+          "first_useful_s": 1.681,
+          "final_stt_s": 0.0,
+          "wer": 0.3333,
+          "exact": false,
+          "transcript": "आपका नाम क्या है। & आपका रहते है?"
+        },
+        {
+          "id": "HI-3",
+          "calls": 4,
+          "amplification": 1.89,
+          "first_useful_s": 3.859,
+          "final_stt_s": 0.0,
+          "wer": 0.5556,
+          "exact": false,
+          "transcript": "मूजे अच का मोसम बहुज रहा है।"
+        },
+        {
+          "id": "HI-4",
+          "calls": 4,
+          "amplification": 1.92,
+          "first_useful_s": 3.858,
+          "final_stt_s": 0.0,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "खिप्या मूज हे नेजेगा नाछाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशा�"
+        },
+        {
+          "id": "HI-5",
+          "calls": 3,
+          "amplification": 2.05,
+          "first_useful_s": 1.577,
+          "final_stt_s": 2.044,
+          "wer": 0.3333,
+          "exact": false,
+          "transcript": "यह हम कल सुभा दस बचे मिल सकते है?"
+        },
+        {
+          "id": "HG-1",
+          "calls": 3,
+          "amplification": 1.37,
+          "first_useful_s": 3.737,
+          "final_stt_s": 0.0,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "अज मीतिन का दाम क्या है।"
+        },
+        {
+          "id": "HG-2",
+          "calls": 4,
+          "amplification": 2.5,
+          "first_useful_s": 3.91,
+          "final_stt_s": 2.312,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "मेर बाँ भाँ परी स्भाद हो एक है।"
+        },
+        {
+          "id": "HG-3",
+          "calls": 4,
+          "amplification": 2.72,
+          "first_useful_s": 3.838,
+          "final_stt_s": 3.929,
+          "wer": 0.8889,
+          "exact": false,
+          "transcript": "सर்வால் தான் ہو گیا ہے,please deployment check-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-ch"
+        },
+        {
+          "id": "HG-4",
+          "calls": 4,
+          "amplification": 1.97,
+          "first_useful_s": 3.811,
+          "final_stt_s": 0.0,
+          "wer": 4.0,
+          "exact": false,
+          "transcript": "मूज ही प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रो�"
+        },
+        {
+          "id": "HG-5",
+          "calls": 5,
+          "amplification": 2.46,
+          "first_useful_s": 3.827,
+          "final_stt_s": 0.0,
+          "wer": 1.0,
+          "exact": false,
+          "transcript": "वेगा देखावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावावा�"
+        },
+        {
+          "id": "TECH-1",
+          "calls": 4,
+          "amplification": 2.62,
+          "first_useful_s": 1.801,
+          "final_stt_s": 1.834,
+          "wer": 0.1111,
+          "exact": false,
+          "transcript": "We need to deploy our containerized microservices to Kubanades."
+        },
+        {
+          "id": "TECH-2",
+          "calls": 5,
+          "amplification": 2.49,
+          "first_useful_s": 1.522,
+          "final_stt_s": 0.0,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "The vector database stores dense embeddings for retrieval augmented generation."
+        },
+        {
+          "id": "TECH-3",
+          "calls": 4,
+          "amplification": 2.59,
+          "first_useful_s": 1.519,
+          "final_stt_s": 1.825,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Check the API gateway logs for rate limit errors and high response times."
+        },
+        {
+          "id": "TECH-4",
+          "calls": 4,
+          "amplification": 2.55,
+          "first_useful_s": 1.515,
+          "final_stt_s": 1.918,
+          "wer": 0.25,
+          "exact": false,
+          "transcript": "We configure faster whisper with INT8 quantization on CPU."
+        },
+        {
+          "id": "TECH-5",
+          "calls": 5,
+          "amplification": 2.47,
+          "first_useful_s": 1.501,
+          "final_stt_s": 0.0,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "Continuous integration pipeline runs unit tests before pushing to production."
+        },
+        {
+          "id": "NUM-1",
+          "calls": 6,
+          "amplification": 3.56,
+          "first_useful_s": 1.579,
+          "final_stt_s": 1.931,
+          "wer": 0.0,
+          "exact": true,
+          "transcript": "The server IP address is 192.168.1.105 on port 8000."
+        },
+        {
+          "id": "NUM-2",
+          "calls": 5,
+          "amplification": 2.35,
+          "first_useful_s": 1.622,
+          "final_stt_s": 0.0,
+          "wer": 0.2,
+          "exact": false,
+          "transcript": "Flight AI302 departs at 5.45 pm from terminal 3."
+        },
+        {
+          "id": "NUM-3",
+          "calls": 4,
+          "amplification": 1.84,
+          "first_useful_s": 1.643,
+          "final_stt_s": 0.0,
+          "wer": 0.6,
+          "exact": false,
+          "transcript": "Your verification code is 849201."
+        },
+        {
+          "id": "NUM-4",
+          "calls": 6,
+          "amplification": 2.8,
+          "first_useful_s": 1.625,
+          "final_stt_s": 0.0,
+          "wer": 0.1111,
+          "exact": false,
+          "transcript": "The invoice total is $1,250.75 due on November 15."
+        },
+        {
+          "id": "NUM-5",
+          "calls": 5,
+          "amplification": 2.29,
+          "first_useful_s": 1.524,
+          "final_stt_s": 0.0,
+          "wer": 0.0769,
+          "exact": false,
+          "transcript": "Dr. Sharma will be available on room 402 between 2 and 4 pm."
+        }
+      ]
+    }
+  ]
+}

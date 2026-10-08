@@ -8,6 +8,7 @@ import os
 import time
 import uuid
 import asyncio
+from types import SimpleNamespace
 from typing import Optional, Dict, Any, Tuple
 
 from backend.core.logger import stream_log
@@ -26,6 +27,8 @@ from backend.services.hypothesis_service import (
 DEFAULT_MAX_BUFFER_BYTES = int(os.getenv("STREAM_MAX_BUFFER_BYTES", 5 * 1024 * 1024))  # 5 MB
 DEFAULT_MIN_PARTIAL_BYTES = int(os.getenv("STREAM_MIN_PARTIAL_BYTES", 16000))
 DEFAULT_PARTIAL_INTERVAL_BYTES = int(os.getenv("STREAM_PARTIAL_INTERVAL_BYTES", 24000))
+
+
 
 
 class StreamingSession:
@@ -116,6 +119,8 @@ class StreamingSession:
                     return False
                 self.vad_state.is_speech_active = True
 
+        # Atomically reserve in-flight execution to prevent concurrent duplicate partial dispatch
+        self.is_evaluating_partial = True
         return True
 
     def reset_for_next_turn(self, new_request_id: Optional[str] = None) -> None:
@@ -194,7 +199,10 @@ class StreamingOrchestrator:
             partial_text = await asyncio.to_thread(
                 self.stt.transcribe_partial,
                 audio_bytes=snapshot,
-                lang=session.language
+                lang=session.language,
+                session_id=session.session_id,
+                request_id=session.request_id,
+                reason="partial_stream"
             )
         except Exception as e:
             partial_text = ""
@@ -241,25 +249,51 @@ class StreamingOrchestrator:
 
         stream_log("final_transcription_started", session.request_id, buffer_bytes=len(audio_snapshot))
 
-        # 1. Authoritative Phase 1 STT
-        t_stt_start = time.perf_counter()
-        try:
-            transcript, info, diagnostics, engine_used, model_used = await asyncio.to_thread(
-                self.stt.transcribe,
-                audio_bytes=audio_snapshot,
-                lang=session.language,
-                filename="stream_recording.wav",
-                content_type="audio/wav"
-            )
-        except Exception as exc:
-            stream_log("final_stt_error", session.request_id, error=str(exc))
-            return {
-                "type": "error",
-                "request_id": session.request_id,
-                "message": f"Transcription error: {str(exc)}"
-            }
+        # 1. Authoritative STT with Phase 8 Smart Finalization
+        buffer_len = len(session.buffer)
+        enable_smart_finalize = os.getenv("STREAM_SMART_FINALIZE", "true").lower() in ("true", "1")
+        can_fast_path = (
+            enable_smart_finalize
+            and session.last_partial_bytes_len >= (buffer_len * 0.90)
+            and bool(session.last_partial_text)
+            and any(c.isalnum() for c in session.last_partial_text)
+        )
 
-        t_stt_s = time.perf_counter() - t_stt_start
+        t_stt_start = time.perf_counter()
+        if can_fast_path:
+            transcript = session.last_partial_text
+            engine_used = "local"
+            model_used = self.stt.model_size
+            info = SimpleNamespace(language=session.language, language_probability=1.0, language_source="streaming_partial")
+            diagnostics = {"is_silent_gate": False, "gate_reason": None, "fast_path": True}
+            t_stt_s = time.perf_counter() - t_stt_start
+            stream_log(
+                "final_transcription_fast_path",
+                session.request_id,
+                transcript=transcript,
+                coverage_pct=round(session.last_partial_bytes_len / max(1, buffer_len) * 100, 1),
+                stt_ms=round(t_stt_s * 1000, 1)
+            )
+        else:
+            try:
+                transcript, info, diagnostics, engine_used, model_used = await asyncio.to_thread(
+                    self.stt.transcribe,
+                    audio_bytes=audio_snapshot,
+                    lang=session.language,
+                    filename="stream_recording.wav",
+                    content_type="audio/wav",
+                    session_id=session.session_id,
+                    request_id=session.request_id,
+                    reason="final_stream"
+                )
+            except Exception as exc:
+                stream_log("final_stt_error", session.request_id, error=str(exc))
+                return {
+                    "type": "error",
+                    "request_id": session.request_id,
+                    "message": f"Transcription error: {str(exc)}"
+                }
+            t_stt_s = time.perf_counter() - t_stt_start
         if session.first_result_ts is None and transcript:
             session.first_result_ts = time.perf_counter()
 

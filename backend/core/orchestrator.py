@@ -76,7 +76,10 @@ class PipelineOrchestrator:
                 lang=source_lang,
                 filename=filename,
                 content_type=content_type,
-                capture_metadata=capture_metadata
+                capture_metadata=capture_metadata,
+                session_id=session_id,
+                request_id=request_id,
+                reason="rest_pipeline"
             )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc

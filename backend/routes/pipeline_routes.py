@@ -222,3 +222,24 @@ def clear_history(session_id: str = "default"):
     session_manager.clear_history(session_id)
     llm_service.conversation_manager.clear_history(session_id)
     return {"message": f"History for session '{session_id}' cleared."}
+
+
+# === Whisper Profiling Diagnostic Endpoint (Phase 8) ===
+
+@router.get("/api/stt/profile")
+def get_stt_profiler_summary(session_id: Optional[str] = None):
+    """
+    Returns structured Whisper call profiling metrics:
+    - Number of Whisper invocations
+    - Total audio duration processed vs speech duration (amplification)
+    - Cumulative inference time and per-call breakdown
+    """
+    from backend.services.whisper_profiler import whisper_profiler
+    if session_id:
+        summary = whisper_profiler.get_turn_summary(session_id)
+    else:
+        summary = whisper_profiler.get_latest_turn()
+
+    if not summary:
+        return {"status": "no_data", "calls": [], "call_count": 0}
+    return summary

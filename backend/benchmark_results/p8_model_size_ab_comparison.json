@@ -1,0 +1,638 @@
+{
+  "base": {
+    "model": "base",
+    "mean_latency_s": 2.542,
+    "total_latency_s": 76.27,
+    "average_wer": 0.5032,
+    "exact_matches": 13,
+    "exact_pct": 43.3,
+    "category_stats": {
+      "Short English": {
+        "mean_latency_s": 1.837,
+        "average_wer": 0.0,
+        "exact_matches": 5,
+        "total": 5
+      },
+      "Long English": {
+        "mean_latency_s": 2.338,
+        "average_wer": 0.0174,
+        "exact_matches": 4,
+        "total": 5
+      },
+      "Hindi": {
+        "mean_latency_s": 2.968,
+        "average_wer": 1.154,
+        "exact_matches": 0,
+        "total": 5
+      },
+      "Hinglish": {
+        "mean_latency_s": 4.057,
+        "average_wer": 1.5778,
+        "exact_matches": 0,
+        "total": 5
+      },
+      "Technical": {
+        "mean_latency_s": 2.035,
+        "average_wer": 0.0722,
+        "exact_matches": 3,
+        "total": 5
+      },
+      "Numbers & Entities": {
+        "mean_latency_s": 2.019,
+        "average_wer": 0.1976,
+        "exact_matches": 1,
+        "total": 5
+      }
+    },
+    "results": [
+      {
+        "id": "EN-S1",
+        "category": "Short English",
+        "lat": 1.826,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Hello, how are you?",
+        "hyp": "Hello, how are you?"
+      },
+      {
+        "id": "EN-S2",
+        "category": "Short English",
+        "lat": 1.821,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "What time is the meeting?",
+        "hyp": "What time is the meeting?"
+      },
+      {
+        "id": "EN-S3",
+        "category": "Short English",
+        "lat": 1.862,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Can you hear me clearly?",
+        "hyp": "Can you hear me clearly?"
+      },
+      {
+        "id": "EN-S4",
+        "category": "Short English",
+        "lat": 1.837,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Thank you for your help.",
+        "hyp": "Thank you for your help."
+      },
+      {
+        "id": "EN-S5",
+        "category": "Short English",
+        "lat": 1.84,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Please send me the report.",
+        "hyp": "Please send me the report."
+      },
+      {
+        "id": "EN-L1",
+        "category": "Long English",
+        "lat": 2.796,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Hello, what is your name? What are you doing? What is your job?",
+        "hyp": "Hello, what is your name?  What are you doing?  What is your job?"
+      },
+      {
+        "id": "EN-L2",
+        "category": "Long English",
+        "lat": 2.329,
+        "wer": 0.087,
+        "exact": false,
+        "ref": "Good morning everyone, today we are going to discuss the architecture of our real time translation system and how to optimize inference latency.",
+        "hyp": "Good morning everyone, today we are going to discuss the architecture of our real-time translation system  and how to optimize inference latency."
+      },
+      {
+        "id": "EN-L3",
+        "category": "Long English",
+        "lat": 1.967,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis.",
+        "hyp": "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+      },
+      {
+        "id": "EN-L4",
+        "category": "Long English",
+        "lat": 2.448,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window.",
+        "hyp": "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window."
+      },
+      {
+        "id": "EN-L5",
+        "category": "Long English",
+        "lat": 2.151,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks.",
+        "hyp": "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks."
+      },
+      {
+        "id": "HI-1",
+        "category": "Hindi",
+        "lat": 2.075,
+        "wer": 0.5,
+        "exact": false,
+        "ref": "नमस्ते, आप कैसे हैं?",
+        "hyp": "नमस्ती आप के से है?"
+      },
+      {
+        "id": "HI-2",
+        "category": "Hindi",
+        "lat": 2.369,
+        "wer": 0.5556,
+        "exact": false,
+        "ref": "आपका नाम क्या है और आप कहाँ रहते हैं?",
+        "hyp": "आपका नाम क्या है।"
+      },
+      {
+        "id": "HI-3",
+        "category": "Hindi",
+        "lat": 2.486,
+        "wer": 0.6667,
+        "exact": false,
+        "ref": "मुझे आज का मौसम बहुत अच्छा लग रहा है।",
+        "hyp": "मूजी वाच का मोसम बहुजा ज़ागा नए है।"
+      },
+      {
+        "id": "HI-4",
+        "category": "Hindi",
+        "lat": 5.588,
+        "wer": 3.7143,
+        "exact": false,
+        "ref": "कृपया मुझे स्टेशन का रास्ता बता दीजिए।",
+        "hyp": "खिप्या मूज हे नेजेगा नाजीजे नाजीजे नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा नाजीगा �"
+      },
+      {
+        "id": "HI-5",
+        "category": "Hindi",
+        "lat": 2.321,
+        "wer": 0.3333,
+        "exact": false,
+        "ref": "क्या हम कल सुबह दस बजे मिल सकते हैं?",
+        "hyp": "यह हम कल सुभा दस बचे मिल सकते है?"
+      },
+      {
+        "id": "HG-1",
+        "category": "Hinglish",
+        "lat": 2.118,
+        "wer": 1.0,
+        "exact": false,
+        "ref": "Aaj meeting ka time kya hai?",
+        "hyp": "अज मीतिन का ताम क्या है?"
+      },
+      {
+        "id": "HG-2",
+        "category": "Hinglish",
+        "lat": 2.82,
+        "wer": 1.0,
+        "exact": false,
+        "ref": "Mera laptop restart ho gaya hai aur code save nahi hua.",
+        "hyp": "मेर बाँ भाँ परी स्भाद हो एक है।"
+      },
+      {
+        "id": "HG-3",
+        "category": "Hinglish",
+        "lat": 5.295,
+        "wer": 0.8889,
+        "exact": false,
+        "ref": "Server down ho gaya hai, please deployment check karo.",
+        "hyp": "सर்வால் தான் ہو گیا ہے,please deployment check-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-chick-in-ch"
+      },
+      {
+        "id": "HG-4",
+        "category": "Hinglish",
+        "lat": 5.082,
+        "wer": 4.0,
+        "exact": false,
+        "ref": "Mujhe project documentation submit karni hai.",
+        "hyp": "मूज ही प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रोजे क्प्रो�"
+      },
+      {
+        "id": "HG-5",
+        "category": "Hinglish",
+        "lat": 4.97,
+        "wer": 1.0,
+        "exact": false,
+        "ref": "Latency bahut zyada hai, isko optimize karna padega.",
+        "hyp": "वेशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशाशा�"
+      },
+      {
+        "id": "TECH-1",
+        "category": "Technical",
+        "lat": 2.02,
+        "wer": 0.1111,
+        "exact": false,
+        "ref": "We need to deploy our containerized microservices to Kubernetes.",
+        "hyp": "We need to deploy our containerized microservices to Kubanades."
+      },
+      {
+        "id": "TECH-2",
+        "category": "Technical",
+        "lat": 1.993,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "The vector database stores dense embeddings for retrieval augmented generation.",
+        "hyp": "The vector database stores dense embeddings for retrieval augmented generation."
+      },
+      {
+        "id": "TECH-3",
+        "category": "Technical",
+        "lat": 2.004,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Check the API gateway logs for rate limit errors and high response times.",
+        "hyp": "Check the API gateway logs for rate limit errors and high response times."
+      },
+      {
+        "id": "TECH-4",
+        "category": "Technical",
+        "lat": 1.994,
+        "wer": 0.25,
+        "exact": false,
+        "ref": "We configure Faster-Whisper with INT8 quantization on CPU.",
+        "hyp": "We configure faster whisper with INT8 quantization on CPU."
+      },
+      {
+        "id": "TECH-5",
+        "category": "Technical",
+        "lat": 2.167,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Continuous integration pipeline runs unit tests before pushing to production.",
+        "hyp": "Continuous integration pipeline runs unit tests before pushing to production."
+      },
+      {
+        "id": "NUM-1",
+        "category": "Numbers & Entities",
+        "lat": 2.096,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "The server IP address is 192.168.1.105 on port 8000.",
+        "hyp": "The server IP address is 192.168.1.105 on port 8000."
+      },
+      {
+        "id": "NUM-2",
+        "category": "Numbers & Entities",
+        "lat": 2.021,
+        "wer": 0.2,
+        "exact": false,
+        "ref": "Flight AI 302 departs at 5:45 PM from terminal 3.",
+        "hyp": "Flight AI302 departs at 5.45 pm from terminal 3."
+      },
+      {
+        "id": "NUM-3",
+        "category": "Numbers & Entities",
+        "lat": 2.003,
+        "wer": 0.6,
+        "exact": false,
+        "ref": "Your verification code is 8 4 9 2 0 1.",
+        "hyp": "Your verification code is 849201."
+      },
+      {
+        "id": "NUM-4",
+        "category": "Numbers & Entities",
+        "lat": 1.99,
+        "wer": 0.1111,
+        "exact": false,
+        "ref": "The invoice total is $1,250.75 due on November 15th.",
+        "hyp": "The invoice total is $1,250.75 due on November 15."
+      },
+      {
+        "id": "NUM-5",
+        "category": "Numbers & Entities",
+        "lat": 1.983,
+        "wer": 0.0769,
+        "exact": false,
+        "ref": "Doctor Sharma will be available on room 402 between 2 and 4 PM.",
+        "hyp": "Dr Sharma will be available on room 402 between 2 and 4 pm."
+      }
+    ]
+  },
+  "tiny": {
+    "model": "tiny",
+    "mean_latency_s": 1.345,
+    "total_latency_s": 40.34,
+    "average_wer": 1.4873,
+    "exact_matches": 14,
+    "exact_pct": 46.7,
+    "category_stats": {
+      "Short English": {
+        "mean_latency_s": 0.947,
+        "average_wer": 0.0,
+        "exact_matches": 5,
+        "total": 5
+      },
+      "Long English": {
+        "mean_latency_s": 1.067,
+        "average_wer": 0.0,
+        "exact_matches": 5,
+        "total": 5
+      },
+      "Hindi": {
+        "mean_latency_s": 1.751,
+        "average_wer": 3.0,
+        "exact_matches": 0,
+        "total": 5
+      },
+      "Hinglish": {
+        "mean_latency_s": 2.058,
+        "average_wer": 5.5121,
+        "exact_matches": 0,
+        "total": 5
+      },
+      "Technical": {
+        "mean_latency_s": 1.131,
+        "average_wer": 0.0944,
+        "exact_matches": 3,
+        "total": 5
+      },
+      "Numbers & Entities": {
+        "mean_latency_s": 1.114,
+        "average_wer": 0.3173,
+        "exact_matches": 1,
+        "total": 5
+      }
+    },
+    "results": [
+      {
+        "id": "EN-S1",
+        "category": "Short English",
+        "lat": 0.937,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Hello, how are you?",
+        "hyp": "Hello, how are you?"
+      },
+      {
+        "id": "EN-S2",
+        "category": "Short English",
+        "lat": 0.968,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "What time is the meeting?",
+        "hyp": "What time is the meeting?"
+      },
+      {
+        "id": "EN-S3",
+        "category": "Short English",
+        "lat": 0.937,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Can you hear me clearly?",
+        "hyp": "Can you hear me clearly?"
+      },
+      {
+        "id": "EN-S4",
+        "category": "Short English",
+        "lat": 0.955,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Thank you for your help.",
+        "hyp": "Thank you for your help."
+      },
+      {
+        "id": "EN-S5",
+        "category": "Short English",
+        "lat": 0.937,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Please send me the report.",
+        "hyp": "Please send me the report."
+      },
+      {
+        "id": "EN-L1",
+        "category": "Long English",
+        "lat": 1.049,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Hello, what is your name? What are you doing? What is your job?",
+        "hyp": "Hello, what is your name?  What are you doing?  What is your job?"
+      },
+      {
+        "id": "EN-L2",
+        "category": "Long English",
+        "lat": 1.083,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Good morning everyone, today we are going to discuss the architecture of our real time translation system and how to optimize inference latency.",
+        "hyp": "Good morning everyone. Today we are going to discuss the architecture of our real time translation system and how to optimize inference latency."
+      },
+      {
+        "id": "EN-L3",
+        "category": "Long English",
+        "lat": 1.043,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis.",
+        "hyp": "The speech recognition pipeline processes audio in small windows and produces stabilized transcripts for downstream translation and speech synthesis."
+      },
+      {
+        "id": "EN-L4",
+        "category": "Long English",
+        "lat": 1.08,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window.",
+        "hyp": "If you have any questions during the presentation, please feel free to interrupt me or write them down in the chat window."
+      },
+      {
+        "id": "EN-L5",
+        "category": "Long English",
+        "lat": 1.079,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks.",
+        "hyp": "We observed that running deep learning models on limited CPU resources requires careful memory management and thread tuning to avoid bottlenecks."
+      },
+      {
+        "id": "HI-1",
+        "category": "Hindi",
+        "lat": 0.946,
+        "wer": 1.0,
+        "exact": false,
+        "ref": "नमस्ते, आप कैसे हैं?",
+        "hyp": "Namaste, how are you?"
+      },
+      {
+        "id": "HI-2",
+        "category": "Hindi",
+        "lat": 2.73,
+        "wer": 7.2222,
+        "exact": false,
+        "ref": "आपका नाम क्या है और आप कहाँ रहते हैं?",
+        "hyp": "पाद का पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद का हैं पाद क"
+      },
+      {
+        "id": "HI-3",
+        "category": "Hindi",
+        "lat": 2.942,
+        "wer": 4.8889,
+        "exact": false,
+        "ref": "मुझे आज का मौसम बहुत अच्छा लग रहा है।",
+        "hyp": "मुदी पापद का मोंद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पाद पा"
+      },
+      {
+        "id": "HI-4",
+        "category": "Hindi",
+        "lat": 1.052,
+        "wer": 1.0,
+        "exact": false,
+        "ref": "कृपया मुझे स्टेशन का रास्ता बता दीजिए।",
+        "hyp": "Трипи амوجه из Тейс션kar Rasta bata diji"
+      },
+      {
+        "id": "HI-5",
+        "category": "Hindi",
+        "lat": 1.087,
+        "wer": 0.8889,
+        "exact": false,
+        "ref": "क्या हम कल सुबह दस बजे मिल सकते हैं?",
+        "hyp": "काम क� सुपाओ 10 бاجе мльсякты है?"
+      },
+      {
+        "id": "HG-1",
+        "category": "Hinglish",
+        "lat": 2.614,
+        "wer": 12.3333,
+        "exact": false,
+        "ref": "Aaj meeting ka time kya hai?",
+        "hyp": "यह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह दह �"
+      },
+      {
+        "id": "HG-2",
+        "category": "Hinglish",
+        "lat": 2.71,
+        "wer": 6.7273,
+        "exact": false,
+        "ref": "Mera laptop restart ho gaya hai aur code save nahi hua.",
+        "hyp": "में यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह यह �"
+      },
+      {
+        "id": "HG-3",
+        "category": "Hinglish",
+        "lat": 1.033,
+        "wer": 0.6667,
+        "exact": false,
+        "ref": "Server down ho gaya hai, please deployment check karo.",
+        "hyp": "सर यान होदे है, please deployment check."
+      },
+      {
+        "id": "HG-4",
+        "category": "Hinglish",
+        "lat": 0.967,
+        "wer": 0.8333,
+        "exact": false,
+        "ref": "Mujhe project documentation submit karni hai.",
+        "hyp": "which is the project documentation submit."
+      },
+      {
+        "id": "HG-5",
+        "category": "Hinglish",
+        "lat": 2.967,
+        "wer": 7.0,
+        "exact": false,
+        "ref": "Latency bahut zyada hai, isko optimize karna padega.",
+        "hyp": "परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे परे पर"
+      },
+      {
+        "id": "TECH-1",
+        "category": "Technical",
+        "lat": 1.036,
+        "wer": 0.2222,
+        "exact": false,
+        "ref": "We need to deploy our containerized microservices to Kubernetes.",
+        "hyp": "We need to deploy our containerized micro services to Kubernetes."
+      },
+      {
+        "id": "TECH-2",
+        "category": "Technical",
+        "lat": 1.027,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "The vector database stores dense embeddings for retrieval augmented generation.",
+        "hyp": "The vector database stores dense embeddings for retrieval augmented generation."
+      },
+      {
+        "id": "TECH-3",
+        "category": "Technical",
+        "lat": 1.302,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Check the API gateway logs for rate limit errors and high response times.",
+        "hyp": "Check the API Gateway Logs for rate limit errors and high response times."
+      },
+      {
+        "id": "TECH-4",
+        "category": "Technical",
+        "lat": 1.244,
+        "wer": 0.25,
+        "exact": false,
+        "ref": "We configure Faster-Whisper with INT8 quantization on CPU.",
+        "hyp": "We configure faster whisper with iNT8 quantization on CPU."
+      },
+      {
+        "id": "TECH-5",
+        "category": "Technical",
+        "lat": 1.045,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "Continuous integration pipeline runs unit tests before pushing to production.",
+        "hyp": "Continuous integration pipeline runs unit tests, before pushing to production."
+      },
+      {
+        "id": "NUM-1",
+        "category": "Numbers & Entities",
+        "lat": 1.185,
+        "wer": 0.0,
+        "exact": true,
+        "ref": "The server IP address is 192.168.1.105 on port 8000.",
+        "hyp": "The server IP address is 192.168.1.105 on Port 8000."
+      },
+      {
+        "id": "NUM-2",
+        "category": "Numbers & Entities",
+        "lat": 1.113,
+        "wer": 0.2,
+        "exact": false,
+        "ref": "Flight AI 302 departs at 5:45 PM from terminal 3.",
+        "hyp": "Flight AI 302 departs at 545pm from Terminal 3."
+      },
+      {
+        "id": "NUM-3",
+        "category": "Numbers & Entities",
+        "lat": 1.055,
+        "wer": 0.6,
+        "exact": false,
+        "ref": "Your verification code is 8 4 9 2 0 1.",
+        "hyp": "Your verification code is 849201."
+      },
+      {
+        "id": "NUM-4",
+        "category": "Numbers & Entities",
+        "lat": 1.152,
+        "wer": 0.5556,
+        "exact": false,
+        "ref": "The invoice total is $1,250.75 due on November 15th.",
+        "hyp": "The invoice total is $1,250 and 75 cents due on November 15."
+      },
+      {
+        "id": "NUM-5",
+        "category": "Numbers & Entities",
+        "lat": 1.065,
+        "wer": 0.2308,
+        "exact": false,
+        "ref": "Doctor Sharma will be available on room 402 between 2 and 4 PM.",
+        "hyp": "Dr. Sharma will be available on room 402 between 2 and 4pm."
+      }
+    ]
+  }
+}
