@@ -4,6 +4,11 @@ Coordinates application lifecycle, middleware, error handling, and route registr
 """
 
 import os
+os.environ.setdefault("MKL_DISABLE_FAST_MM", "1")
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 import io
 import sys
 import asyncio

@@ -50,6 +50,35 @@ class WhisperProfiler:
         self._call_counter = 0
         self._history: List[WhisperCallRecord] = []
         self._active_sessions: Dict[str, List[WhisperCallRecord]] = {}
+        self._active_per_session: Dict[str, int] = {}
+        self._max_concurrent_per_session: Dict[str, int] = {}
+
+    def start_call(self, session_id: str) -> int:
+        """Mark start of a Whisper inference call for session and update max concurrent metric."""
+        with self._lock:
+            sid = session_id or "default"
+            curr = self._active_per_session.get(sid, 0) + 1
+            self._active_per_session[sid] = curr
+            if curr > self._max_concurrent_per_session.get(sid, 0):
+                self._max_concurrent_per_session[sid] = curr
+            return curr
+
+    def end_call(self, session_id: str) -> None:
+        """Mark completion of a Whisper inference call for session."""
+        with self._lock:
+            sid = session_id or "default"
+            curr = self._active_per_session.get(sid, 1) - 1
+            self._active_per_session[sid] = max(0, curr)
+
+    def get_max_concurrent(self, session_id: str) -> int:
+        """Return peak concurrent Whisper invocations observed for this session."""
+        with self._lock:
+            return self._max_concurrent_per_session.get(session_id or "default", 0)
+
+    def get_active_count(self, session_id: str) -> int:
+        """Return currently running Whisper invocations for this session."""
+        with self._lock:
+            return self._active_per_session.get(session_id or "default", 0)
 
     def record_call(
         self,
@@ -133,11 +162,17 @@ class WhisperProfiler:
         with self._lock:
             if session_id in self._active_sessions:
                 del self._active_sessions[session_id]
+            if session_id in self._active_per_session:
+                del self._active_per_session[session_id]
+            if session_id in self._max_concurrent_per_session:
+                del self._max_concurrent_per_session[session_id]
 
     def reset_all(self):
         with self._lock:
             self._call_counter = 0
             self._history.clear()
             self._active_sessions.clear()
+            self._active_per_session.clear()
+            self._max_concurrent_per_session.clear()
 
 whisper_profiler = WhisperProfiler()

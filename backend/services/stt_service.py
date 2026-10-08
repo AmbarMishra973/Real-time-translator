@@ -5,6 +5,11 @@ silence gating, script guidance prompts, and hallucination protection.
 """
 
 import os
+os.environ.setdefault("MKL_DISABLE_FAST_MM", "1")
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 import io
 import re
 import sys
@@ -376,18 +381,22 @@ class STTService:
             # Guide Devanagari script tokenization for Hindi to prevent Urdu Perso-Arabic transcription
             initial_prompt = "यह हिंदी में बातचीत है।" if whisper_lang == "hi" else None
 
-            t_inf_start = time.perf_counter()
-            segments, info = self.model.transcribe(
-                io.BytesIO(wav_bytes),
-                language=whisper_lang,
-                beam_size=1,
-                temperature=0.0,
-                vad_filter=False,
-                condition_on_previous_text=False,
-                initial_prompt=initial_prompt,
-            )
-            clean_text = ' '.join(seg.text for seg in segments).strip()
-            inference_dur_s = time.perf_counter() - t_inf_start
+            whisper_profiler.start_call(session_id or "default")
+            try:
+                t_inf_start = time.perf_counter()
+                segments, info = self.model.transcribe(
+                    io.BytesIO(wav_bytes),
+                    language=whisper_lang,
+                    beam_size=1,
+                    temperature=0.0,
+                    vad_filter=False,
+                    condition_on_previous_text=False,
+                    initial_prompt=initial_prompt,
+                )
+                clean_text = ' '.join(seg.text for seg in segments).strip()
+                inference_dur_s = time.perf_counter() - t_inf_start
+            finally:
+                whisper_profiler.end_call(session_id or "default")
 
             whisper_profiler.record_call(
                 session_id=session_id or "default",
@@ -474,6 +483,7 @@ class STTService:
         pcm_len = max(0, len(wav_bytes) - 44)
         audio_dur_s = round(pcm_len / 32000.0, 3)
 
+        whisper_profiler.start_call(session_id or "default")
         try:
             t_inf_start = time.perf_counter()
             segments, _ = self.model.transcribe(
@@ -504,6 +514,8 @@ class STTService:
             return text
         except Exception:
             return ""
+        finally:
+            whisper_profiler.end_call(session_id or "default")
 
 
 # Process-level singleton instance
