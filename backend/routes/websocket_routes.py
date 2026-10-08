@@ -52,12 +52,15 @@ async def websocket_streaming_endpoint(websocket: WebSocket):
     initial_lang = query_params.get("lang") or query_params.get("language") or "en"
     initial_target = query_params.get("target_lang") or "hi"
     initial_domain = query_params.get("domain") or "all"
+    initial_hypo_param = query_params.get("hypothesis_enabled")
+    initial_hypo = (initial_hypo_param.lower() == "true") if initial_hypo_param else None
 
     session: StreamingSession = streaming_orchestrator.create_session(
         session_id=initial_session_id,
         language=initial_lang,
         target_lang=initial_target,
-        domain=initial_domain
+        domain=initial_domain,
+        hypothesis_enabled=initial_hypo,
     )
 
     stream_log("stream_connected", session.request_id, session_id=session.session_id)
@@ -94,7 +97,9 @@ async def websocket_streaming_endpoint(websocket: WebSocket):
                         session_id=payload.get("session_id", session.session_id),
                         language=payload.get("language", session.language),
                         target_lang=payload.get("target_lang", session.target_lang),
-                        domain=payload.get("domain", session.domain)
+                        domain=payload.get("domain", session.domain),
+                        vad_enabled=payload.get("vad_enabled", session.vad_enabled),
+                        hypothesis_enabled=payload.get("hypothesis_enabled", session.hypothesis_enabled),
                     )
                     await websocket.send_json({
                         "type": "ready",
@@ -149,11 +154,18 @@ async def websocket_streaming_endpoint(websocket: WebSocket):
                         try:
                             partial = await streaming_orchestrator.evaluate_partial(s)
                             if partial and not s.is_cancelled:
-                                await websocket.send_json({
+                                payload = {
                                     "type": "partial",
                                     "text": partial,
                                     "request_id": s.request_id
-                                })
+                                }
+                                if s.hypothesis_enabled and s.last_stabilized_result:
+                                    payload["stable_text"] = s.last_stabilized_result.stable_text
+                                    payload["unstable_text"] = s.last_stabilized_result.unstable_text
+                                    payload["stable_ratio"] = s.last_stabilized_result.stable_ratio
+                                    payload["is_stabilized"] = True
+
+                                await websocket.send_json(payload)
                         except Exception:
                             pass
 

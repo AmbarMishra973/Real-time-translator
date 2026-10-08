@@ -202,20 +202,31 @@ class STTService:
         self.model_size = os.getenv("WHISPER_SIZE", "base")
         self.device = os.getenv("WHISPER_DEVICE", "cpu")
         self.compute_type = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
+        self.cpu_threads = int(os.getenv("WHISPER_CPU_THREADS", "2"))
         self.model: Optional[WhisperModel] = None
         self._load_model()
 
     def _load_model(self) -> None:
         print(f"[*] Initializing Faster-Whisper ({self.model_size} on {self.device})...", flush=True)
         try:
-            self.model = WhisperModel(self.model_size, device=self.device, compute_type=self.compute_type)
+            self.model = WhisperModel(
+                self.model_size,
+                device=self.device,
+                compute_type=self.compute_type,
+                cpu_threads=self.cpu_threads
+            )
             print("[+] Whisper model loaded successfully.", flush=True)
         except Exception as e:
             print(f"[!] Warning: Could not load {self.model_size} model ({e}).", flush=True)
             if self.model_size != "base":
                 try:
                     print("[*] Attempting cached base-model fallback...", flush=True)
-                    self.model = WhisperModel("base", device="cpu", compute_type="int8")
+                    self.model = WhisperModel(
+                        "base",
+                        device="cpu",
+                        compute_type="int8",
+                        cpu_threads=self.cpu_threads
+                    )
                     self.model_size = "base"
                     print("[+] Base fallback model loaded successfully.", flush=True)
                 except Exception as fallback_error:

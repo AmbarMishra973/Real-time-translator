@@ -16,6 +16,12 @@ from backend.services.rag_service import rag_service, RAGService
 from backend.services.llm_service import llm_service, LLMService
 from backend.services.session_manager import session_manager, SessionManager
 from backend.services.vad_service import vad_service, VADService, VADSessionState
+from backend.services.hypothesis_service import (
+    hypothesis_service,
+    HypothesisService,
+    HypothesisSessionState,
+    HypothesisResult
+)
 
 DEFAULT_MAX_BUFFER_BYTES = int(os.getenv("STREAM_MAX_BUFFER_BYTES", 5 * 1024 * 1024))  # 5 MB
 DEFAULT_MIN_PARTIAL_BYTES = int(os.getenv("STREAM_MIN_PARTIAL_BYTES", 16000))
@@ -34,6 +40,7 @@ class StreamingSession:
         domain: str = "all",
         max_buffer_bytes: int = DEFAULT_MAX_BUFFER_BYTES,
         vad_enabled: Optional[bool] = None,
+        hypothesis_enabled: Optional[bool] = None,
     ):
         self.session_id = session_id
         self.request_id = request_id
@@ -45,6 +52,14 @@ class StreamingSession:
         # VAD & Endpointing configuration (defaults to VAD_ENABLED env var)
         self.vad_enabled = vad_enabled if vad_enabled is not None else (os.getenv("VAD_ENABLED", "false").lower() == "true")
         self.vad_state: VADSessionState = vad_service.create_session_state(session_id=self.session_id)
+
+        # Hypothesis Stabilization configuration (defaults to HYPOTHESIS_STABILIZATION_ENABLED env var)
+        self.hypothesis_enabled = (
+            hypothesis_enabled if hypothesis_enabled is not None
+            else (os.getenv("HYPOTHESIS_STABILIZATION_ENABLED", "false").lower() == "true")
+        )
+        self.hypothesis_state: HypothesisSessionState = hypothesis_service.create_session_state(session_id=self.session_id)
+        self.last_stabilized_result: Optional[HypothesisResult] = None
 
         self.buffer = bytearray()
         self.first_audio_ts: Optional[float] = None
@@ -104,7 +119,7 @@ class StreamingSession:
         return True
 
     def reset_for_next_turn(self, new_request_id: Optional[str] = None) -> None:
-        """Resets streaming buffers and VAD tracking while keeping session metadata intact."""
+        """Resets streaming buffers, VAD tracking, and hypothesis stabilization state while keeping session metadata intact."""
         self.request_id = new_request_id or uuid.uuid4().hex[:10]
         self.buffer.clear()
         self.first_audio_ts = None
@@ -115,6 +130,8 @@ class StreamingSession:
         self.last_partial_text = ""
         self.last_partial_bytes_len = 0
         self.vad_state.reset_for_next_turn()
+        self.hypothesis_state.reset_for_next_turn()
+        self.last_stabilized_result = None
 
 
 class StreamingOrchestrator:
@@ -143,6 +160,7 @@ class StreamingOrchestrator:
         target_lang: str = "hi",
         domain: str = "all",
         vad_enabled: Optional[bool] = None,
+        hypothesis_enabled: Optional[bool] = None,
     ) -> StreamingSession:
         sid = session_id or f"stream_{uuid.uuid4().hex[:8]}"
         rid = request_id or uuid.uuid4().hex[:10]
@@ -153,6 +171,7 @@ class StreamingOrchestrator:
             target_lang=target_lang,
             domain=domain,
             vad_enabled=vad_enabled,
+            hypothesis_enabled=hypothesis_enabled,
         )
         stream_log("stream_started", rid, session_id=sid, language=language, target_lang=target_lang)
         return session
@@ -160,6 +179,7 @@ class StreamingOrchestrator:
     async def evaluate_partial(self, session: StreamingSession) -> Optional[str]:
         """
         Executes non-blocking incremental transcription on currently accumulated audio.
+        Applies hypothesis stabilization / local agreement when enabled.
         Returns text if new/updated intermediate tokens found, else None.
         """
         if session.is_cancelled or len(session.buffer) < DEFAULT_MIN_PARTIAL_BYTES:
@@ -190,11 +210,17 @@ class StreamingOrchestrator:
                 session.first_result_ts = time.perf_counter()
 
             session.last_partial_text = clean_text
+
+            if session.hypothesis_enabled:
+                stab_res = hypothesis_service.process_hypothesis(clean_text, session.hypothesis_state)
+                session.last_stabilized_result = stab_res
+
             ttfr_ms = round((session.first_result_ts - (session.first_audio_ts or session.start_ts)) * 1000, 1)
             stream_log(
                 "partial_transcription",
                 session.request_id,
                 partial=clean_text,
+                stable_prefix=session.last_stabilized_result.stable_text if session.last_stabilized_result else "",
                 ttfr_ms=ttfr_ms,
                 latency_ms=round((time.perf_counter() - t_start) * 1000, 1)
             )
@@ -339,6 +365,10 @@ class StreamingOrchestrator:
             fallback_used=fallback_used
         )
 
+        hypo_reconciliation = None
+        if session.hypothesis_enabled:
+            hypo_reconciliation = hypothesis_service.reconcile_final(transcript, session.hypothesis_state)
+
         return {
             "type": "final",
             "request_id": session.request_id,
@@ -373,6 +403,7 @@ class StreamingOrchestrator:
             "stt_model": model_used,
             "gate_reason": None,
             "suspected_hallucination": diagnostics.get("suspected_hallucination", False),
+            "hypothesis_reconciliation": hypo_reconciliation,
         }
 
     def cancel_stream(self, session: StreamingSession) -> Dict[str, Any]:
