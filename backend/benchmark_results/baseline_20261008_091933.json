@@ -1,0 +1,688 @@
+{
+  "benchmark": "phase_0_golden_baseline",
+  "timestamp": "2026-10-08T09:19:33.355155",
+  "environment": {
+    "python_version": "3.13.7",
+    "os": "Windows-11-10.0.26200-SP0",
+    "architecture": "AMD64",
+    "processor": "Intel64 Family 6 Model 142 Stepping 10, GenuineIntel",
+    "total_ram_mb": 8056.8,
+    "free_ram_mb": 790.1,
+    "peak_process_ram_mb": 456.11
+  },
+  "configuration": {
+    "stt_engine": "local",
+    "whisper_size": "base",
+    "whisper_device": "cpu",
+    "whisper_compute_type": "int8",
+    "default_llm_provider": "groq",
+    "groq_model": "llama-3.3-70b-versatile",
+    "has_groq_client": true,
+    "tts_engine": "edge-tts",
+    "tts_voices": {
+      "en": "en-US-JennyNeural",
+      "hi": "hi-IN-SwaraNeural"
+    }
+  },
+  "cold_start": {
+    "first_partial_latency_ms": 2335.43,
+    "final_stt_ms": 2374.31,
+    "rag_ms": 15.11,
+    "translation_ms": 1163.7,
+    "tts_ms": 2712.42,
+    "total_e2e_ms": 12807.46,
+    "provider": "Local Multilingual Engine",
+    "fallback_used": true
+  },
+  "warm_aggregates": {
+    "first_partial": {
+      "n": 45,
+      "mean": 2797.28,
+      "p50": 1951.34,
+      "p95": 5768.98,
+      "min": 1747.22,
+      "max": 5808.52,
+      "std": 1466.81
+    },
+    "final_stt": {
+      "n": 45,
+      "mean": 2824.03,
+      "p50": 2448.72,
+      "p95": 5515.8,
+      "min": 2194.23,
+      "max": 6388.73,
+      "std": 1028.28
+    },
+    "rag": {
+      "n": 45,
+      "mean": 3.2,
+      "p50": 3.04,
+      "p95": 4.05,
+      "min": 2.7,
+      "max": 4.37,
+      "std": 0.4
+    },
+    "translation": {
+      "n": 45,
+      "mean": 346.26,
+      "p50": 196.12,
+      "p95": 1093.4,
+      "min": 159.62,
+      "max": 1184.63,
+      "std": 328.32
+    },
+    "tts": {
+      "n": 45,
+      "mean": 2223.09,
+      "p50": 2225.97,
+      "p95": 2724.46,
+      "min": 1685.42,
+      "max": 2760.69,
+      "std": 321.15
+    },
+    "e2e": {
+      "n": 45,
+      "mean": 13556.5,
+      "p50": 13487.57,
+      "p95": 19190.32,
+      "min": 8035.57,
+      "max": 21487.67,
+      "std": 3750.49
+    }
+  },
+  "cases": [
+    {
+      "id": "EN-1",
+      "category": "English Conversational (Short)",
+      "expected": "Hello",
+      "transcript_produced": "Hello.",
+      "translation_produced": "हैलो।",
+      "provider": "Local Multilingual Engine",
+      "fallback_used": true,
+      "metrics": {
+        "first_partial_latency_ms": {
+          "n": 5,
+          "mean": 1983.39,
+          "p50": 1973.77,
+          "p95": 2068.5,
+          "min": 1930.76,
+          "max": 2068.5,
+          "std": 47.37
+        },
+        "final_stt_latency_ms": {
+          "n": 5,
+          "mean": 2422.45,
+          "p50": 2415.09,
+          "p95": 2496.7,
+          "min": 2346.95,
+          "max": 2496.7,
+          "std": 49.53
+        },
+        "rag_latency_ms": {
+          "n": 5,
+          "mean": 2.96,
+          "p50": 2.81,
+          "p95": 3.57,
+          "min": 2.7,
+          "max": 3.57,
+          "std": 0.31
+        },
+        "translation_latency_ms": {
+          "n": 5,
+          "mean": 185.0,
+          "p50": 180.24,
+          "p95": 202.4,
+          "min": 163.53,
+          "max": 202.4,
+          "std": 14.81
+        },
+        "tts_latency_ms": {
+          "n": 5,
+          "mean": 1996.38,
+          "p50": 1986.72,
+          "p95": 2194.12,
+          "min": 1750.43,
+          "max": 2194.12,
+          "std": 164.74
+        },
+        "e2e_latency_ms": {
+          "n": 5,
+          "mean": 8916.65,
+          "p50": 8928.54,
+          "p95": 9309.89,
+          "min": 8491.86,
+          "max": 9309.89,
+          "std": 262.95
+        }
+      }
+    },
+    {
+      "id": "EN-2",
+      "category": "English Conversational",
+      "expected": "What is your name?",
+      "transcript_produced": "What is your name?",
+      "translation_produced": "आपका नाम क्या है?",
+      "provider": "Local Multilingual Engine",
+      "fallback_used": true,
+      "metrics": {
+        "first_partial_latency_ms": {
+          "n": 5,
+          "mean": 2037.42,
+          "p50": 1932.29,
+          "p95": 2465.26,
+          "min": 1819.75,
+          "max": 2465.26,
+          "std": 227.61
+        },
+        "final_stt_latency_ms": {
+          "n": 5,
+          "mean": 2450.21,
+          "p50": 2226.15,
+          "p95": 3261.81,
+          "min": 2194.23,
+          "max": 3261.81,
+          "std": 410.08
+        },
+        "rag_latency_ms": {
+          "n": 5,
+          "mean": 3.24,
+          "p50": 2.95,
+          "p95": 4.37,
+          "min": 2.88,
+          "max": 4.37,
+          "std": 0.57
+        },
+        "translation_latency_ms": {
+          "n": 5,
+          "mean": 356.91,
+          "p50": 209.1,
+          "p95": 1004.49,
+          "min": 170.47,
+          "max": 1004.49,
+          "std": 324.35
+        },
+        "tts_latency_ms": {
+          "n": 5,
+          "mean": 2028.27,
+          "p50": 2039.64,
+          "p95": 2317.42,
+          "min": 1685.42,
+          "max": 2317.42,
+          "std": 230.01
+        },
+        "e2e_latency_ms": {
+          "n": 5,
+          "mean": 9116.9,
+          "p50": 8643.52,
+          "p95": 11524.26,
+          "min": 8035.57,
+          "max": 11524.26,
+          "std": 1230.15
+        }
+      }
+    },
+    {
+      "id": "EN-3",
+      "category": "English Conversational",
+      "expected": "How are you doing today?",
+      "transcript_produced": "How are you doing today?",
+      "translation_produced": "आज आप कैसे हैं?",
+      "provider": "Local Multilingual Engine",
+      "fallback_used": true,
+      "metrics": {
+        "first_partial_latency_ms": {
+          "n": 5,
+          "mean": 2781.05,
+          "p50": 2427.88,
+          "p95": 4288.23,
+          "min": 1919.56,
+          "max": 4288.23,
+          "std": 817.75
+        },
+        "final_stt_latency_ms": {
+          "n": 5,
+          "mean": 2497.37,
+          "p50": 2497.97,
+          "p95": 2709.63,
+          "min": 2327.5,
+          "max": 2709.63,
+          "std": 125.18
+        },
+        "rag_latency_ms": {
+          "n": 5,
+          "mean": 3.02,
+          "p50": 3.02,
+          "p95": 3.17,
+          "min": 2.86,
+          "max": 3.17,
+          "std": 0.1
+        },
+        "translation_latency_ms": {
+          "n": 5,
+          "mean": 351.82,
+          "p50": 193.59,
+          "p95": 942.32,
+          "min": 191.04,
+          "max": 942.32,
+          "std": 295.81
+        },
+        "tts_latency_ms": {
+          "n": 5,
+          "mean": 2395.45,
+          "p50": 2335.59,
+          "p95": 2724.46,
+          "min": 1952.99,
+          "max": 2724.46,
+          "std": 272.16
+        },
+        "e2e_latency_ms": {
+          "n": 5,
+          "mean": 10448.97,
+          "p50": 10377.53,
+          "p95": 11637.95,
+          "min": 9085.2,
+          "max": 11637.95,
+          "std": 824.18
+        }
+      }
+    },
+    {
+      "id": "HI-1",
+      "category": "Hindi Conversational",
+      "expected": "आपका नाम क्या है?",
+      "transcript_produced": "आपका नाम क्या है?",
+      "translation_produced": "What is your name?",
+      "provider": "Local Multilingual Engine",
+      "fallback_used": true,
+      "metrics": {
+        "first_partial_latency_ms": {
+          "n": 5,
+          "mean": 5491.01,
+          "p50": 5714.64,
+          "p95": 5768.98,
+          "min": 4951.85,
+          "max": 5768.98,
+          "std": 324.45
+        },
+        "final_stt_latency_ms": {
+          "n": 5,
+          "mean": 2601.68,
+          "p50": 2565.36,
+          "p95": 2878.36,
+          "min": 2401.88,
+          "max": 2878.36,
+          "std": 158.14
+        },
+        "rag_latency_ms": {
+          "n": 5,
+          "mean": 3.17,
+          "p50": 3.0,
+          "p95": 4.05,
+          "min": 2.8,
+          "max": 4.05,
+          "std": 0.45
+        },
+        "translation_latency_ms": {
+          "n": 5,
+          "mean": 355.27,
+          "p50": 192.14,
+          "p95": 1018.23,
+          "min": 167.54,
+          "max": 1018.23,
+          "std": 332.05
+        },
+        "tts_latency_ms": {
+          "n": 5,
+          "mean": 2486.48,
+          "p50": 2566.37,
+          "p95": 2742.96,
+          "min": 2129.83,
+          "max": 2742.96,
+          "std": 223.24
+        },
+        "e2e_latency_ms": {
+          "n": 5,
+          "mean": 16046.0,
+          "p50": 15460.48,
+          "p95": 18065.44,
+          "min": 15343.81,
+          "max": 18065.44,
+          "std": 1033.58
+        }
+      }
+    },
+    {
+      "id": "HI-2",
+      "category": "Hindi Conversational",
+      "expected": "आप कैसे हैं?",
+      "transcript_produced": "आप वाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवाँवा�",
+      "translation_produced": "You're left-handed, you're right-handed, you're right-handed, you're left-handed, you're right-handed, you're left-handed, you're right-handed, you're right-handed, you're right-handed, you're right-handed, you're right-handed.",
+      "provider": "Local Multilingual Engine",
+      "fallback_used": true,
+      "metrics": {
+        "first_partial_latency_ms": {
+          "n": 5,
+          "mean": 5325.42,
+          "p50": 5203.05,
+          "p95": 5808.52,
+          "min": 4889.76,
+          "max": 5808.52,
+          "std": 400.17
+        },
+        "final_stt_latency_ms": {
+          "n": 5,
+          "mean": 5653.36,
+          "p50": 5515.8,
+          "p95": 6388.73,
+          "min": 5304.04,
+          "max": 6388.73,
+          "std": 399.46
+        },
+        "rag_latency_ms": {
+          "n": 5,
+          "mean": 3.75,
+          "p50": 3.78,
+          "p95": 3.97,
+          "min": 3.43,
+          "max": 3.97,
+          "std": 0.17
+        },
+        "translation_latency_ms": {
+          "n": 5,
+          "mean": 406.21,
+          "p50": 222.16,
+          "p95": 1184.63,
+          "min": 190.2,
+          "max": 1184.63,
+          "std": 389.6
+        },
+        "tts_latency_ms": {
+          "n": 5,
+          "mean": 2430.92,
+          "p50": 2455.59,
+          "p95": 2760.69,
+          "min": 2012.71,
+          "max": 2760.69,
+          "std": 266.63
+        },
+        "e2e_latency_ms": {
+          "n": 5,
+          "mean": 19278.23,
+          "p50": 19190.32,
+          "p95": 21487.67,
+          "min": 18001.35,
+          "max": 21487.67,
+          "std": 1275.0
+        }
+      }
+    },
+    {
+      "id": "TECH-1",
+      "category": "Technical English",
+      "expected": "We need to implement a vector database with RAG.",
+      "transcript_produced": "We need to implement a vector database with RAG.",
+      "translation_produced": "हमें रैग के साथ एक वेक्टर डेटाबेस को लागू करने की आवश्यकता है।",
+      "provider": "Local Multilingual Engine",
+      "fallback_used": true,
+      "metrics": {
+        "first_partial_latency_ms": {
+          "n": 5,
+          "mean": 2015.13,
+          "p50": 1799.61,
+          "p95": 2713.7,
+          "min": 1776.56,
+          "max": 2713.7,
+          "std": 358.45
+        },
+        "final_stt_latency_ms": {
+          "n": 5,
+          "mean": 2414.95,
+          "p50": 2348.43,
+          "p95": 2689.0,
+          "min": 2282.43,
+          "max": 2689.0,
+          "std": 143.22
+        },
+        "rag_latency_ms": {
+          "n": 5,
+          "mean": 3.4,
+          "p50": 3.32,
+          "p95": 4.24,
+          "min": 2.92,
+          "max": 4.24,
+          "std": 0.46
+        },
+        "translation_latency_ms": {
+          "n": 5,
+          "mean": 363.02,
+          "p50": 182.91,
+          "p95": 1093.4,
+          "min": 159.62,
+          "max": 1093.4,
+          "std": 365.53
+        },
+        "tts_latency_ms": {
+          "n": 5,
+          "mean": 1917.28,
+          "p50": 1974.69,
+          "p95": 1994.39,
+          "min": 1795.11,
+          "max": 1994.39,
+          "std": 80.65
+        },
+        "e2e_latency_ms": {
+          "n": 5,
+          "mean": 13422.8,
+          "p50": 13487.57,
+          "p95": 13964.23,
+          "min": 12804.0,
+          "max": 13964.23,
+          "std": 440.68
+        }
+      }
+    },
+    {
+      "id": "TECH-2",
+      "category": "Technical English",
+      "expected": "Kubernetes orchestration.",
+      "transcript_produced": "Kubernetes orchestration.",
+      "translation_produced": "कुबेरनेट्स ऑर्केस्ट्रेशन।",
+      "provider": "Local Multilingual Engine",
+      "fallback_used": true,
+      "metrics": {
+        "first_partial_latency_ms": {
+          "n": 5,
+          "mean": 1820.56,
+          "p50": 1821.23,
+          "p95": 1915.27,
+          "min": 1750.89,
+          "max": 1915.27,
+          "std": 55.63
+        },
+        "final_stt_latency_ms": {
+          "n": 5,
+          "mean": 2394.01,
+          "p50": 2242.45,
+          "p95": 2809.09,
+          "min": 2229.22,
+          "max": 2809.09,
+          "std": 225.1
+        },
+        "rag_latency_ms": {
+          "n": 5,
+          "mean": 3.01,
+          "p50": 3.04,
+          "p95": 3.08,
+          "min": 2.92,
+          "max": 3.08,
+          "std": 0.07
+        },
+        "translation_latency_ms": {
+          "n": 5,
+          "mean": 359.28,
+          "p50": 203.38,
+          "p95": 969.52,
+          "min": 179.46,
+          "max": 969.52,
+          "std": 305.79
+        },
+        "tts_latency_ms": {
+          "n": 5,
+          "mean": 2201.09,
+          "p50": 2301.8,
+          "p95": 2512.12,
+          "min": 1821.62,
+          "max": 2512.12,
+          "std": 239.75
+        },
+        "e2e_latency_ms": {
+          "n": 5,
+          "mean": 11097.21,
+          "p50": 11072.96,
+          "p95": 11847.35,
+          "min": 10166.31,
+          "max": 11847.35,
+          "std": 587.95
+        }
+      }
+    },
+    {
+      "id": "NUM-1",
+      "category": "Technical with Numbers",
+      "expected": "The web server returned HTTP 404 error code.",
+      "transcript_produced": "The web server returned HTTP 404 error code.",
+      "translation_produced": "वेब सर्वर ने HTTP 404 त्रुटि कोड लौटाया।",
+      "provider": "Local Multilingual Engine",
+      "fallback_used": true,
+      "metrics": {
+        "first_partial_latency_ms": {
+          "n": 5,
+          "mean": 1832.31,
+          "p50": 1814.06,
+          "p95": 1919.75,
+          "min": 1752.91,
+          "max": 1919.75,
+          "std": 64.08
+        },
+        "final_stt_latency_ms": {
+          "n": 5,
+          "mean": 2521.16,
+          "p50": 2614.89,
+          "p95": 2696.36,
+          "min": 2333.35,
+          "max": 2696.36,
+          "std": 151.12
+        },
+        "rag_latency_ms": {
+          "n": 5,
+          "mean": 3.04,
+          "p50": 3.02,
+          "p95": 3.28,
+          "min": 2.92,
+          "max": 3.28,
+          "std": 0.13
+        },
+        "translation_latency_ms": {
+          "n": 5,
+          "mean": 363.03,
+          "p50": 203.64,
+          "p95": 1050.0,
+          "min": 164.55,
+          "max": 1050.0,
+          "std": 344.21
+        },
+        "tts_latency_ms": {
+          "n": 5,
+          "mean": 2121.59,
+          "p50": 2070.81,
+          "p95": 2458.82,
+          "min": 1705.29,
+          "max": 2458.82,
+          "std": 290.72
+        },
+        "e2e_latency_ms": {
+          "n": 5,
+          "mean": 15586.8,
+          "p50": 15609.1,
+          "p95": 16057.69,
+          "min": 15192.83,
+          "max": 16057.69,
+          "std": 289.77
+        }
+      }
+    },
+    {
+      "id": "LONG-1",
+      "category": "Longer Natural Utterance",
+      "expected": "We deployed the backend service using Docker containers and Kubernetes.",
+      "transcript_produced": "We deployed the back end service using Docker containers and Kubernetes.",
+      "translation_produced": "हमने डॉकर कंटेनरों और कुबेरनेट्स का उपयोग करके बैक एंड सेवा को तैनात किया।",
+      "provider": "Local Multilingual Engine",
+      "fallback_used": true,
+      "metrics": {
+        "first_partial_latency_ms": {
+          "n": 5,
+          "mean": 1889.18,
+          "p50": 1789.25,
+          "p95": 2214.71,
+          "min": 1747.22,
+          "max": 2214.71,
+          "std": 174.72
+        },
+        "final_stt_latency_ms": {
+          "n": 5,
+          "mean": 2461.11,
+          "p50": 2423.58,
+          "p95": 2624.1,
+          "min": 2320.17,
+          "max": 2624.1,
+          "std": 115.82
+        },
+        "rag_latency_ms": {
+          "n": 5,
+          "mean": 3.17,
+          "p50": 3.15,
+          "p95": 3.46,
+          "min": 2.95,
+          "max": 3.46,
+          "std": 0.17
+        },
+        "translation_latency_ms": {
+          "n": 5,
+          "mean": 375.83,
+          "p50": 193.4,
+          "p95": 1119.15,
+          "min": 184.03,
+          "max": 1119.15,
+          "std": 371.68
+        },
+        "tts_latency_ms": {
+          "n": 5,
+          "mean": 2430.32,
+          "p50": 2609.32,
+          "p95": 2668.99,
+          "min": 1734.18,
+          "max": 2668.99,
+          "std": 354.66
+        },
+        "e2e_latency_ms": {
+          "n": 5,
+          "mean": 18094.93,
+          "p50": 18214.18,
+          "p95": 19106.76,
+          "min": 17402.75,
+          "max": 19106.76,
+          "std": 632.11
+        }
+      }
+    }
+  ],
+  "notes": [
+    "Faster-Whisper inference executed locally on CPU via CTranslate2 INT8.",
+    "RAG executed locally via Scikit-learn TF-IDF Cosine Similarity.",
+    "First partial latency measured across simulated 250ms chunks fed into StreamingSession.",
+    "Cases where audio length was under MIN_PARTIAL_BYTES yielded null first partials as designed.",
+    "Translation executed via configured provider (Groq or local cascade fallback).",
+    "TTS executed via Edge-TTS neural async synthesis stream."
+  ]
+}
